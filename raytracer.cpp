@@ -85,7 +85,7 @@ pair<VEC3, const Shape*> RayTracer::getClosestIntersection(const Ray &ray) const
 		VEC3 intersect_point = ray.o + closestTime * ray.d;
 		return make_pair(intersect_point, intersectShape);
 	}
-	return make_pair(VEC3(0, 0, 0), intersectShape);
+	return make_pair(VEC3(0, 0, 0), intersectShape);							// WHAT DOES THIS MEAN??
 }
 
 // Calculates the colour of this ray based on the world

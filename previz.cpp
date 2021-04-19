@@ -45,8 +45,9 @@ float nearPlane = 10;
 float fovy = 60;
 
 Camera camera(windowWidth, windowHeight, eye, lookingAt, up, nearPlane, fovy);
-
+Shader shader;
 vector<const Shape *> world;
+RayTracer raytracer(camera, shader, world);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -71,78 +72,6 @@ void writePPM(const string& filename, int& xRes, int& yRes, const float* values)
   fwrite(pixels, 1, totalCells * 3, fp);
   fclose(fp);
   delete[] pixels;
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-bool raySphereIntersect(const VEC3& center, 
-                        const float radius, 
-                        const VEC3& rayPos, 
-                        const VEC3& rayDir,
-                        float& t)
-{
-  const VEC3 op = center - rayPos;
-  const float eps = 1e-8;
-  const float b = op.dot(rayDir);
-  float det = b * b - op.dot(op) + radius * radius;
-
-  // determinant check
-  if (det < 0) 
-    return false; 
-  
-  det = sqrt(det);
-  t = b - det;
-  if (t <= eps)
-  {
-    t = b + det;
-    if (t <= eps)
-      t = -1;
-  }
-
-  if (t < 0) return false;
-  return true;
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-void rayColor(const VEC3& rayPos, const VEC3& rayDir, VEC3& pixelColor) 
-{
-  pixelColor = VEC3(1,1,1);
-
-  // look for intersections
-  //int hitID = -1;
-  const Sphere *hitSphere = NULL;
-  float tMinFound = FLT_MAX;
-  for (int y = 0; y < world.size(); y++)
-  {
-    float tMin = FLT_MAX;
-    const Sphere *sphere = (Sphere *) world[y];
-    float smallest = 0;
-
-    //if (raySphereIntersect(sphereCenters[y], sphereRadii[y], rayPos, rayDir, tMin))
-    const Ray ray = Ray(rayPos, rayDir, 10);
-    if (sphere->intersects(ray, smallest))
-    { 
-      // is the closest so far?
-      if (tMin < tMinFound)
-      {
-        tMinFound = tMin;
-        //hitID = y;
-        hitSphere = sphere;
-      }
-    }
-  }
-  
-  // No intersection, return white
-  if (hitSphere == NULL) {
-    return;
-  }
-  //if (hitID == -1)
-    //return;
-
-  // set to the sphere color
-  //pixelColor = sphereColors[hitID];
-  pixelColor = hitSphere->colour;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +111,9 @@ void renderImage(int& xRes, int& yRes, const string& filename)
 
       // get the color
       VEC3 color;
-      rayColor(eye, rayDir, color);
+      Ray ray = Ray(eye, rayDir, 10);
+      color = raytracer.calculateColour(ray);
+      //rayColor(eye, rayDir, color);
 
       // set, in final image
       ppmOut[3 * (y * xRes + x)] = clamp(color[0]) * 255.0f;
@@ -317,3 +248,82 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+// Professor Kim's original code:
+
+/*
+bool raySphereIntersect(const VEC3& center, 
+                        const float radius, 
+                        const VEC3& rayPos, 
+                        const VEC3& rayDir,
+                        float& t)
+{
+  const VEC3 op = center - rayPos;
+  const float eps = 1e-8;
+  const float b = op.dot(rayDir);
+  float det = b * b - op.dot(op) + radius * radius;
+
+  // determinant check
+  if (det < 0) 
+    return false; 
+  
+  det = sqrt(det);
+  t = b - det;
+  if (t <= eps)
+  {
+    t = b + det;
+    if (t <= eps)
+      t = -1;
+  }
+
+  if (t < 0) return false;
+  return true;
+}
+*/
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+/*
+void rayColor(const VEC3& rayPos, const VEC3& rayDir, VEC3& pixelColor) 
+{
+  pixelColor = VEC3(1,1,1);
+
+  // look for intersections
+  //int hitID = -1;
+  const Sphere *hitSphere = NULL;
+  float tMinFound = FLT_MAX;
+  for (int y = 0; y < world.size(); y++)
+  {
+    const Sphere *sphere = (Sphere *) world[y];
+    float smallest = FLT_MAX;
+
+    //if (raySphereIntersect(sphereCenters[y], sphereRadii[y], rayPos, rayDir, tMin))
+    const Ray ray = Ray(rayPos, rayDir.normalized(), 10);
+    if (sphere->intersects(ray, smallest))
+    { 
+      // is the closest so far?
+      if (smallest < tMinFound)
+      {
+        tMinFound = smallest;
+        //hitID = y;
+        hitSphere = sphere;
+      }
+    }
+  }
+  
+  // No intersection, return white
+  if (hitSphere == NULL) {
+    return;
+  }
+  //if (hitID == -1)
+    //return;
+
+  // set to the sphere color
+  //pixelColor = sphereColors[hitID];
+  pixelColor = hitSphere->colour;
+}
+*/

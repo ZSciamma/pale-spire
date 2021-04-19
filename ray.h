@@ -6,6 +6,7 @@
 #include <vector>
 #include "SETTINGS.h"
 
+// Represents a ray shooting out into space
 class Ray {                                                              // IS THIS INEFFICIENT?
 public:
 	VEC3 o, d;  // Store origin and direction
