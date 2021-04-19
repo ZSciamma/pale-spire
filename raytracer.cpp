@@ -58,7 +58,7 @@ Ray RayTracer::generateAtCoord(float x, float y) const {
 	y -= camera.screenBot;
 	float x2 = left + ((right - left) * (x + 0.5) / camera.xRes);            // IS THE +0.5 CORRECT
 	float y2 = bot + ((top - bot) * (y + 0.5) / camera.yRes);        // CHANGE THIS TO FIX CAST!!!
-	VEC3 s = (x2 * u) + (y2 * v) - (camera.nearPlane * w);
+	VEC3 s = (x2 * (-u)) + (y2 * v) - (camera.nearPlane * w);
 	return Ray(camera.eye, (s - camera.eye).normalized());
 };
 

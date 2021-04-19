@@ -41,19 +41,16 @@ int windowHeight = 480;
 VEC3 eye(-6, 0.5, 1);
 VEC3 lookingAt(5, 0.5, 1);
 VEC3 up(0,1,0);
-float nearPlane = 10;
+float nearPlane = 40;
 float fovy = 60;
 
-Camera camera(windowWidth, windowHeight, eye, lookingAt, up, nearPlane, fovy);
-Shader shader;
 vector<const Shape *> world;
-RayTracer raytracer(camera, shader, world);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-void writePPM(const string& filename, int& xRes, int& yRes, const float* values)
+void writePPM(const string& filename, float& xRes, float& yRes, const float* values)
 {
-  int totalCells = xRes * yRes;
+  int totalCells = (int) xRes * (int) yRes;
   unsigned char* pixels = new unsigned char[3 * totalCells];
   for (int i = 0; i < 3 * totalCells; i++)
     pixels[i] = values[i];
@@ -68,7 +65,7 @@ void writePPM(const string& filename, int& xRes, int& yRes, const float* values)
     exit(0);
   }
 
-  fprintf(fp, "P6\n%d %d\n255\n", xRes, yRes);
+  fprintf(fp, "P6\n%d %d\n255\n", (int) xRes, (int) yRes);
   fwrite(pixels, 1, totalCells * 3, fp);
   fclose(fp);
   delete[] pixels;
@@ -83,47 +80,39 @@ float clamp(float value)
   return value;
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-void renderImage(int& xRes, int& yRes, const string& filename) 
+void renderImage(const string& filename) 
 {
+  Camera camera(windowWidth, windowHeight, eye, lookingAt, up, nearPlane, fovy);
+
   // allocate the final image
-  const int totalCells = xRes * yRes;
+  const int totalCells = camera.xRes * camera.yRes;
   float* ppmOut = new float[3 * totalCells];
 
-  // compute image plane
-  const float halfY = (lookingAt - eye).norm() * tan(45.0f / 360.0f * M_PI);
-  const float halfX = halfY * 4.0f / 3.0f;
+  // Create rendering objects
+  Shader shader;
+  RayTracer raytracer(camera, shader, world);
 
-  const VEC3 cameraZ = (lookingAt - eye).normalized();
-  const VEC3 cameraX = up.cross(cameraZ).normalized();
-  const VEC3 cameraY = cameraZ.cross(cameraX).normalized();
-
-  for (int y = 0; y < yRes; y++) 
-    for (int x = 0; x < xRes; x++) 
-    {
-      const float ratioX = 1.0f - x / float(xRes) * 2.0f;
-      const float ratioY = 1.0f - y / float(yRes) * 2.0f;
-      const VEC3 rayHitImage = lookingAt + 
-                               ratioX * halfX * cameraX +
-                               ratioY * halfY * cameraY;
-      const VEC3 rayDir = (rayHitImage - eye).normalized();
-
-      // get the color
-      VEC3 color;
-      Ray ray = Ray(eye, rayDir, 10);
-      color = raytracer.calculateColour(ray);
-      //rayColor(eye, rayDir, color);
+  for (int y = camera.screenBot; y <= camera.screenTop; y++) {                       // WHAT IF IT'S NOT DIVISIBLE BY 2?
+    for (int x = camera.screenLeft; x <= camera.screenRight; x++) {
+      // Get the colour
+      Ray ray = raytracer.generateAtCoord(x, y);
+      VEC3 colour = raytracer.calculateColour(ray);
 
       // set, in final image
-      ppmOut[3 * (y * xRes + x)] = clamp(color[0]) * 255.0f;
-      ppmOut[3 * (y * xRes + x) + 1] = clamp(color[1]) * 255.0f;
-      ppmOut[3 * (y * xRes + x) + 2] = clamp(color[2]) * 255.0f;
+      int startPos = 3 * ((camera.xRes * (camera.screenTop - y)) + (x - camera.screenLeft));
+      ppmOut[startPos] = clamp(colour[0]) * 255.0;
+      ppmOut[startPos + 1] = clamp(colour[1]) * 255.0;
+      ppmOut[startPos + 2] = clamp(colour[2]) * 255.0;
+      //ppmOut[3 * (y * camera.xRes + x)] = clamp(color[0]) * 255.0f;
+      //ppmOut[3 * (y * camera.xRes + x) + 1] = clamp(color[1]) * 255.0f;
+      //ppmOut[3 * (y * camera.xRes + x) + 2] = clamp(color[2]) * 255.0f;
     }
-  writePPM(filename, xRes, yRes, ppmOut);
+  }
+  writePPM(filename, camera.xRes, camera.yRes, ppmOut);
 
   delete[] ppmOut;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////
 // Load up a new motion captured frame
@@ -242,7 +231,8 @@ int main(int argc, char** argv)
 
     char buffer[256];
     sprintf(buffer, "./frames/frame.%04i.ppm", x / 8);
-    renderImage(windowWidth, windowHeight, buffer);
+    //renderImage(windowWidth, windowHeight, buffer);
+    renderImage(buffer);
     cout << "Rendered " + to_string(x / 8) + " frames" << endl;
   }
 
@@ -325,5 +315,49 @@ void rayColor(const VEC3& rayPos, const VEC3& rayDir, VEC3& pixelColor)
   // set to the sphere color
   //pixelColor = sphereColors[hitID];
   pixelColor = hitSphere->colour;
+}
+*/
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+/*
+void renderImage(int& xRes, int& yRes, const string& filename) 
+{
+  // allocate the final image
+  const int totalCells = xRes * yRes;
+  float* ppmOut = new float[3 * totalCells];
+
+  // compute image plane
+  const float halfY = (lookingAt - eye).norm() * tan(45.0f / 360.0f * M_PI);
+  const float halfX = halfY * 4.0f / 3.0f;
+
+  const VEC3 cameraZ = (lookingAt - eye).normalized();
+  const VEC3 cameraX = up.cross(cameraZ).normalized();
+  const VEC3 cameraY = cameraZ.cross(cameraX).normalized();
+
+  for (int y = 0; y < yRes; y++) 
+    for (int x = 0; x < xRes; x++) 
+    {
+      const float ratioX = 1.0f - x / float(xRes) * 2.0f;
+      const float ratioY = 1.0f - y / float(yRes) * 2.0f;
+      const VEC3 rayHitImage = lookingAt + 
+                               ratioX * halfX * cameraX +
+                               ratioY * halfY * cameraY;
+      const VEC3 rayDir = (rayHitImage - eye).normalized();
+
+      // get the color
+      VEC3 color;
+      Ray ray = Ray(eye, rayDir, 10);
+      color = raytracer.calculateColour(ray);
+      //rayColor(eye, rayDir, color);
+
+      // set, in final image
+      ppmOut[3 * (y * xRes + x)] = clamp(color[0]) * 255.0f;
+      ppmOut[3 * (y * xRes + x) + 1] = clamp(color[1]) * 255.0f;
+      ppmOut[3 * (y * xRes + x) + 2] = clamp(color[2]) * 255.0f;
+    }
+  writePPM(filename, xRes, yRes, ppmOut);
+
+  delete[] ppmOut;
 }
 */
