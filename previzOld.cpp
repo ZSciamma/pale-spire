@@ -19,11 +19,6 @@
 #include <iostream>
 #include <float.h>
 #include "SETTINGS.h"
-
-#include "ray.h"
-#include "shapes.h"
-#include "raytracer.h"
-
 #include "skeleton.h"
 #include "displaySkeleton.h"
 #include "motion.h"
@@ -41,12 +36,11 @@ int windowHeight = 480;
 VEC3 eye(-6, 0.5, 1);
 VEC3 lookingAt(5, 0.5, 1);
 VEC3 up(0,1,0);
-float nearPlane = 10;
-float fovy = 60;
 
-Camera camera(windowWidth, windowHeight, eye, lookingAt, up, nearPlane, fovy);
-
-vector<const Shape *> world;
+// scene geometry
+vector<VEC3> sphereCenters;
+vector<float> sphereRadii;
+vector<VEC3> sphereColors;
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -110,39 +104,28 @@ void rayColor(const VEC3& rayPos, const VEC3& rayDir, VEC3& pixelColor)
   pixelColor = VEC3(1,1,1);
 
   // look for intersections
-  //int hitID = -1;
-  const Sphere *hitSphere = NULL;
+  int hitID = -1;
   float tMinFound = FLT_MAX;
-  for (int y = 0; y < world.size(); y++)
+  for (int y = 0; y < sphereCenters.size(); y++)
   {
     float tMin = FLT_MAX;
-    const Sphere *sphere = (Sphere *) world[y];
-    float smallest = 0;
-
-    //if (raySphereIntersect(sphereCenters[y], sphereRadii[y], rayPos, rayDir, tMin))
-    const Ray ray = Ray(rayPos, rayDir, 10);
-    if (sphere->intersects(ray, smallest))
+    if (raySphereIntersect(sphereCenters[y], sphereRadii[y], rayPos, rayDir, tMin))
     { 
       // is the closest so far?
       if (tMin < tMinFound)
       {
         tMinFound = tMin;
-        //hitID = y;
-        hitSphere = sphere;
+        hitID = y;
       }
     }
   }
   
   // No intersection, return white
-  if (hitSphere == NULL) {
+  if (hitID == -1)
     return;
-  }
-  //if (hitID == -1)
-    //return;
 
   // set to the sphere color
-  //pixelColor = sphereColors[hitID];
-  pixelColor = hitSphere->colour;
+  pixelColor = sphereColors[hitID];
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -223,10 +206,9 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 //////////////////////////////////////////////////////////////////////////////////
 void buildScene()
 {
-  world.clear();
-  //sphereCenters.clear();
-  //sphereRadii.clear();
-  //sphereColors.clear();
+  sphereCenters.clear();
+  sphereRadii.clear();
+  sphereColors.clear();
   displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
 
   // retrieve all the bones of the skeleton
@@ -262,23 +244,19 @@ void buildScene()
     const float rayIncrement = magnitude / (float)totalSpheres;
 
     // store the spheres
-    world.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0)));
-    world.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0)));
-
-    //sphereCenters.push_back(leftVertex.head<3>());
-    //sphereRadii.push_back(0.05);
-    //sphereColors.push_back(VEC3(1,0,0));
+    sphereCenters.push_back(leftVertex.head<3>());
+    sphereRadii.push_back(0.05);
+    sphereColors.push_back(VEC3(1,0,0));
     
-    //sphereCenters.push_back(rightVertex.head<3>());
-    //sphereRadii.push_back(0.05);
-    //sphereColors.push_back(VEC3(1,0,0));
+    sphereCenters.push_back(rightVertex.head<3>());
+    sphereRadii.push_back(0.05);
+    sphereColors.push_back(VEC3(1,0,0));
     for (int y = 0; y < totalSpheres; y++)
     {
       VEC3 center = ((float)y + 0.5) * rayIncrement * direction + leftVertex.head<3>();
-      world.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0)));
-      //sphereCenters.push_back(center);
-      //sphereRadii.push_back(0.05);
-      //sphereColors.push_back(VEC3(1,0,0));
+      sphereCenters.push_back(center);
+      sphereRadii.push_back(0.05);
+      sphereColors.push_back(VEC3(1,0,0));
     } 
   }
 }
