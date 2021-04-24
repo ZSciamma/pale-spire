@@ -78,7 +78,7 @@ Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour)
 {}
 
 VEC3 Triangle::getNormalAt(VEC3 point) const {
-	return -((b-a).cross(c-a)).normalized();
+	return ((b-a).cross(c-a)).normalized();
 }
 
 bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
@@ -113,7 +113,7 @@ bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
 	}
 
 	float beta = (_j*ei_hf + _k*gf_di + _l*dh_eg) / M;
-	if (beta < 0 or beta > 1) {
+	if (beta < 0 or beta > 1 - gamma) {
 		return false;
 	}
 
