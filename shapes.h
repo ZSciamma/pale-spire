@@ -21,8 +21,9 @@ using namespace std;
 class Shape {
 public:
 	VEC3 colour;
+	float phong;	// Phong exponent
 
-	Shape(VEC3 colour);
+	Shape(VEC3 colour, float phong);
 
 	// Returns the normal to the shape at that point
 	virtual VEC3 getNormalAt(VEC3 point) const = 0;
@@ -43,22 +44,40 @@ public:
 	VEC3 center;
 	float radius;
 	VEC3 colour;
+	float phong;
 
-	Sphere(VEC3 center, float radius, VEC3 colour);
+	Sphere(VEC3 center, float radius, VEC3 colour, float phong);
 	VEC3 getNormalAt(VEC3 point) const;
-	bool intersects(const Ray &ray, float& t) const;
+	bool intersects(const Ray &ray, float &t) const;
 };
 
 class Triangle : public Shape {
-	bool intersectsWithRay(const Ray &ray, float& t) const;
+	bool intersectsWithRay(const Ray &ray, float &t) const;
 
 public:
 	VEC3 a,b,c;
 	VEC3 colour;
+	float phong;
 
-	Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour);
+	Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, float phong);
 	VEC3 getNormalAt(VEC3 point) const;
-	bool intersects(const Ray &ray, float& t) const;
+	bool intersects(const Ray &ray, float &t) const;
+};
+
+class Cylinder : public Shape {
+private:
+	VEC3 u, v, w;	// Basis vectors for calculating cylinder interesections
+	void create_basis_vectors(VEC3 up);
+
+public:
+	VEC3 center;	// The center of the base circle, halfway up the cylinder
+	float radius, height;
+	VEC3 colour;
+	float phong;
+
+	Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, float phong);
+	VEC3 getNormalAt(VEC3 point) const;
+	bool intersects(const Ray &ray, float &t) const;
 };
 
 #endif

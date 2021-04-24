@@ -23,6 +23,7 @@
 #include "ray.h"
 #include "shapes.h"
 #include "raytracer.h"
+#include "shader.h"
 
 #include "skeleton.h"
 #include "displaySkeleton.h"
@@ -45,6 +46,7 @@ float nearPlane = 40;
 float fovy = 60;
 
 vector<const Shape *> world;
+vector<Light> lights;
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +91,7 @@ void renderImage(const string& filename)
 	float* ppmOut = new float[3 * totalCells];
 
 	// Create rendering objects
-	Shader shader;
+	Shader shader(lights, world, eye);
 	RayTracer raytracer(camera, shader, world);
 
 	for (int y = camera.screenBot; y <= camera.screenTop; y++) {                       // WHAT IF IT'S NOT DIVISIBLE BY 2?
@@ -144,9 +146,9 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 void buildScene()
 {
 	world.clear();															// DO WE NEED TO DELETE THE SPHERES?
-	world.push_back(new Sphere(VEC3(0, 0, 5), 0.5, VEC3(0,1,0)));
+	world.push_back(new Sphere(VEC3(0, 0, 5), 0.5, VEC3(0,1,0), 10));
 	//world.push_back(new Sphere(VEC3(3, 0.5, 1), 0.5, VEC3(0,1,1)));
-	world.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1)));
+	world.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1), 10));
 	//world.push_back(new Sphere(VEC3(1, -1, -10), 0.5, VEC3(0,1,0)));
 	//world.push_back(new Sphere(VEC3(0, 1, -10), 0.5, VEC3(0,1,0)));
 	//world.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
@@ -162,6 +164,10 @@ void buildScene()
 	//sphereCenters.clear();
 	//sphereRadii.clear();
 	//sphereColors.clear();
+
+	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
+	lights.push_back(Light{ VEC3(1, 0.5, 3), VEC3(1, 1, 1) });
+
 	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
 
 	// retrieve all the bones of the skeleton
@@ -197,9 +203,8 @@ void buildScene()
 		const float rayIncrement = magnitude / (float)totalSpheres;
 
 		// store the spheres
-		world.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0)));
-		world.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0)));
-		cout << rightVertex.head<3>() << endl;
+		world.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
+		world.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
 
 		//sphereCenters.push_back(leftVertex.head<3>());
 		//sphereRadii.push_back(0.05);
@@ -211,7 +216,7 @@ void buildScene()
 		for (int y = 0; y < totalSpheres; y++)
 		{
 			VEC3 center = ((float)y + 0.5) * rayIncrement * direction + leftVertex.head<3>();
-			world.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0)));
+			world.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0), 10));
 			//sphereCenters.push_back(center);
 			//sphereRadii.push_back(0.05);
 			//sphereColors.push_back(VEC3(1,0,0));
@@ -254,6 +259,12 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+// NEXT UP:
+	// Make raytracer getClosestIntersection its own class (e.g. world wrapper class)
+	//	So shader and raytracer can both import it with no issues
+	// Get full phong shading working
+	// Get cylinders working.
 
 
 

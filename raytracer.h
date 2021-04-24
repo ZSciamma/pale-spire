@@ -15,6 +15,7 @@
 #include "SETTINGS.h"
 #include "ray.h"
 #include "shapes.h"
+#include "shader.h"
 
 using namespace std;
 
@@ -29,12 +30,14 @@ public:
 	Camera(float xRes, float yRes, VEC3 eye, VEC3 lookingAt, VEC3 up, float nearPlane, float fovy);
 };
 
+/*
 class Shader {
 public:
 	// Calculate the colour at the point given on the shape
 	//	Inputs the ray that lands on that point
 	VEC3 calculateShading(VEC3 point, const Shape *shape, const Ray &ray) const;
 };
+*/
 
 // Generates rays through each pixel of the screen
 //	Interacts with the Camera to generate rays relative to the world
