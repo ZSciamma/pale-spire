@@ -148,7 +148,7 @@ VEC3 Cylinder::getNormalAt(VEC3 point) const {									// FIX THIS!!
 }
 
 // Calculates the component-wise product of two vectors
-VEC3 hadamard(VEC3 a, VEC3 b) {
+VEC3 Shape::hadamard(VEC3 a, VEC3 b) {
 	return VEC3(a[0]*b[0], a[1]*b[1], a[2]*b[2]);
 }
 

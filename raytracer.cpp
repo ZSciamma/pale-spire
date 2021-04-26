@@ -44,8 +44,8 @@ void RayTracer::initialise_camera_frame() {
 	std::tie(u, v, w) = basis;
 }
 
-RayTracer::RayTracer(Camera &camera, Shader &shader, vector<const Shape *> &shapes) 
-	: camera(camera), shader(shader), shapes(shapes)
+RayTracer::RayTracer(Camera &camera, Shader &shader, PhysicsWorld &world) 
+	: camera(camera), shader(shader), world(world)
 {
 	initialise_viewing_plane_dimensions();
 	initialise_camera_frame();
@@ -62,40 +62,14 @@ Ray RayTracer::generateAtCoord(float x, float y) const {
 	return Ray(camera.eye, (s - camera.eye).normalized());
 };
 
-pair<VEC3, const Shape*> RayTracer::getClosestIntersection(const Ray &ray) const {
-	float closestTime = -1;  // the t of the closest intersection             // CAN THIS EVER FAIL???
-	const Shape *intersectShape = NULL;
-
-	// Check intersection for each shape
-	for (const Shape *shape : shapes) {											// CAN WE MAKE THIS MORE EFFICIENT??
-		// Check if ray intersects with the shape
-		float latestPoint = 0;
-		bool didIntersect = shape->intersects(ray, latestPoint);
-		bool isClosest = (closestTime == -1) or latestPoint < closestTime;
-
-		// Save intersection
-		if (didIntersect and isClosest) {
-			closestTime = latestPoint;
-			intersectShape = shape;
-		}
-	}
-
-	// Calculate intersection point
-	if (closestTime != -1) {
-		VEC3 intersect_point = ray.o + closestTime * ray.d;
-		return make_pair(intersect_point, intersectShape);
-	}
-	return make_pair(VEC3(0, 0, 0), intersectShape);							// WHAT DOES THIS MEAN??
-}
-
 // Calculates the colour of this ray based on the world
 VEC3 RayTracer::calculateColour(const Ray &ray) const {
 	// Get intersection of ray with world
-	pair<VEC3, const Shape*> intersection = getClosestIntersection(ray);
-	VEC3 point = intersection.first;
-	const Shape *shape = intersection.second;
+	const Shape* intersectShape = NULL;
+	VEC3 intersectPoint;
+	world.existsClosestIntersection(ray, intersectShape, intersectPoint);
 
 	// Calculate shading at intersection point
-	VEC3 shaded = shader.calculateShading(point, shape, ray);
+	VEC3 shaded = shader.calculateShading(intersectPoint, intersectShape, ray);
 	return shaded;
 }

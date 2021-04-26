@@ -31,6 +31,8 @@ public:
 	// Returns if the ray intersects with the shape
 	//  Sets to be how far along the ray the shape intersects
 	virtual bool intersects(const Ray &ray, float& t) const = 0;
+
+	static mVEC3 hadamard(VEC3 a, VEC3 b);
 };
 
 class Sphere : public Shape {
