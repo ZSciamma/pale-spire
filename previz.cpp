@@ -141,15 +141,25 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 	}
 }
 
+// Creates the triangles for the floor
+void createFloor() {
+	shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
+	shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
+	shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Build a list of spheres in the scene
 //////////////////////////////////////////////////////////////////////////////////
 void buildScene()
 {
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
-	shapes.push_back(new Sphere(VEC3(0, 0, 5), 0.5, VEC3(0,1,0), 10));
+	shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
+	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
+	createFloor();
+
 	//shapes.push_back(new Sphere(VEC3(3, 0.5, 1), 0.5, VEC3(0,1,1)));
-	shapes.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1), 10));
 	//shapes.push_back(new Sphere(VEC3(1, -1, -10), 0.5, VEC3(0,1,0)));
 	//shapes.push_back(new Sphere(VEC3(0, 1, -10), 0.5, VEC3(0,1,0)));
 	//shapes.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
@@ -167,7 +177,7 @@ void buildScene()
 	//sphereColors.clear();
 
 	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
-	lights.push_back(Light{ VEC3(1, 0.5, 3), VEC3(1, 1, 1) });
+	lights.push_back(Light{ VEC3(-7, 3.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
 
 	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
 

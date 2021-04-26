@@ -64,7 +64,7 @@ bool Sphere::hasSmallestPositiveRoot(std::vector<float> roots, float& smallest) 
 	}
 }
 
-VEC3 Sphere::getNormalAt(VEC3 point) const {
+VEC3 Sphere::getNormalAt(VEC3 point, const Ray &ray) const {
 	return (point - center).normalized();
 }
 
@@ -77,8 +77,17 @@ Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, float phong)
 	: Shape(colour, phong), a(a), b(b), c(c)
 {}
 
-VEC3 Triangle::getNormalAt(VEC3 point) const {									// FIX THIS!!
-	return ((b-a).cross(c-a)).normalized();
+VEC3 Triangle::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
+	// Get vector perpendicular to plane
+	VEC3 normal = ((b-a).cross(c-a)).normalized();
+
+	// Reverse normal if it's pointing in the wrong direction (away from ray origin)
+	bool wrongDirection = (-ray.d).dot(normal) < 0;
+	if (wrongDirection) {
+		normal = -normal;
+	}
+
+	return normal;
 }
 
 bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
@@ -118,7 +127,7 @@ bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
 	}
 
 	t = (_f*ak_jb + _e*jc_al + _d*bl_kc) / M;
-	return true;
+	return t < 0;													// SURELY THIS SHOULD BE T > 0?
 }
 
 bool Triangle::intersects(const Ray &ray, float& t) const {
@@ -143,7 +152,7 @@ Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour
 	create_basis_vectors(up);
 }
 
-VEC3 Cylinder::getNormalAt(VEC3 point) const {									// FIX THIS!!
+VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
 	return point - center;				
 }
 

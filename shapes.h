@@ -26,13 +26,14 @@ public:
 	Shape(VEC3 colour, float phong);
 
 	// Returns the normal to the shape at that point
-	virtual VEC3 getNormalAt(VEC3 point) const = 0;
+	//	Takes the ray which lands on the shape 
+	virtual VEC3 getNormalAt(VEC3 point, const Ray &ray) const = 0;
 
 	// Returns if the ray intersects with the shape
 	//  Sets to be how far along the ray the shape intersects
 	virtual bool intersects(const Ray &ray, float& t) const = 0;
 
-	static mVEC3 hadamard(VEC3 a, VEC3 b);
+	static VEC3 hadamard(VEC3 a, VEC3 b);
 };
 
 class Sphere : public Shape {
@@ -49,7 +50,7 @@ public:
 	float phong;
 
 	Sphere(VEC3 center, float radius, VEC3 colour, float phong);
-	VEC3 getNormalAt(VEC3 point) const;
+	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
 
@@ -62,7 +63,7 @@ public:
 	float phong;
 
 	Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, float phong);
-	VEC3 getNormalAt(VEC3 point) const;
+	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
 
@@ -78,7 +79,7 @@ public:
 	float phong;
 
 	Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, float phong);
-	VEC3 getNormalAt(VEC3 point) const;
+	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
 
