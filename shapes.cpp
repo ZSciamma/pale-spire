@@ -150,20 +150,40 @@ void Cylinder::create_basis_vectors(VEC3 up) {
 	// Get the radius perpendicular to the other radius.
 	u = v.cross(w);
 	u.normalize();								// IS THIS NECESSARY?????
+	//cout << "u: " << u << endl << endl;
+	//cout << "v: " << v << endl << endl;
+	//cout << "w: " << w << endl << endl;
+}
+
+void Cylinder::initialise_rotation_matrix() {
+	localToGlobal.setZero();
+	localToGlobal(0, 0) = u[0];
+	localToGlobal(1, 0) = u[1];
+	localToGlobal(2, 0) = u[2];
+	localToGlobal(0, 1) = v[0];
+	localToGlobal(1, 1) = v[1];
+	localToGlobal(2, 1) = v[2];
+	localToGlobal(0, 2) = w[0];
+	localToGlobal(1, 2) = w[1];
+	localToGlobal(2, 2) = w[2];
+
+	// Invert rotation matrix to reverse transformation
+	globalToLocal = localToGlobal.inverse().eval();
 }
 
 Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, float phong)
 	: Shape(colour, phong), center(center), radius(radius), height(height)
 {
 	create_basis_vectors(up);
+	initialise_rotation_matrix();
 }
 
 VEC3 Cylinder::transformToLocal(VEC3 point) const {
-	return VEC3(0, 0, 0);
+	return globalToLocal * point;
 }
 
 VEC3 Cylinder::transformToGlobal(VEC3 point) const {
-	return VEC3(0, 0, 0);
+	return localToGlobal * point;
 }
 
 VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
@@ -171,16 +191,19 @@ VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX TH
 	VEC3 localPoint = transformToLocal(point);
 
 	// Check if point is on circular edges ("top" and "bottom")
-	bool isOnCircularEdges = pow(point[0], 2) + pow(point[2], 2) < pow(radius, 2);
+	//bool isOnCircularEdges = pow(point[0], 2) + pow(point[2], 2) < pow(radius, 2);
+	bool isOnCircularEdges = pow(point[0], 2) + pow(point[1], 2) < pow(radius, 2);				// IS THIS CORRECT? IS THERE A PROBLEM ON THE EDGES??
 
 	// Get normal
 	VEC3 normal;
 	if (isOnCircularEdges) {
 		// Normal points up or down depending on whether point is above or below origin
-		normal = VEC3(0, point[1], 0);
+		//normal = VEC3(0, point[1], 0);
+		normal = VEC3(0, 0, point[2]);
 	} else {
 		// On rounded edges; normal points outwards
-		normal = VEC3(point[0], 0, point[2]);
+		//normal = VEC3(point[0], 0, point[2]);
+		normal = VEC3(point[0], point[1], 0);
 	}
 
 	// Transform back to global coordinates
@@ -210,6 +233,77 @@ bool exists_closest_valid_intersection(vector<float> roots, float &t) {
 // Extrude the cylinder to infinity and find intersection t range
 //	Then limit the height and check there's an intersection point within it
 bool Cylinder::intersects(const Ray &ray, float& t) const {
+	// Transform ray origin and direction to local cylinder space
+	VEC3 localD = transformToLocal(ray.d);
+	//VEC3 localD = ray.d;
+	//VEC3 localO = ray.o;
+	VEC3 localO = transformToLocal(ray.o - center); //transformToLocal(ray.o);
+
+	// Choose point on cylinder
+	//	chosen = o + t*d
+
+	// Check chosen point is within cylinder height
+	//	chosen[1] < height/2 AND chosen[1] > -height/2
+
+	// Check chosen point is within radius distance of cross section center
+	//	chosen[0]^2 + chosen[1]^2 < radius^2
+	// Get intersection of ray with edges
+	//	chosen[0]^2 + chosen[1]^2 = radius^2
+	//	(o[0] + t*d[0])^2 + (o[1] + t*d[1])^2 = radius^2
+	float A = pow(localD[0], 2) + pow(localD[1], 2);
+	float B = 2*localO[0]*localD[0] + 2*localO[1]*localD[1];
+	float C = pow(localO[0], 2) + pow(localO[1], 2) - pow(radius, 2);
+
+	// Solve intersection equation
+	vector<float> roots = get_quadratic_positive_roots(A, B, C);
+
+	// Return false if no roots
+	if (roots.size() == 0) {
+		return false;
+	}
+
+	// Get closest and furthest time along ray to intersection
+	float closest, furthest;
+	if (roots.size() == 1) {
+		closest = roots[0];
+		furthest = roots[0];
+	} else {
+		closest = min(roots[0], roots[1]);						// CHECK GREATER THAN 0!!!!!
+		furthest = max(roots[0], roots[1]);
+	}
+	//cout << closest << endl;
+	//cout << furthest << endl << endl;
+
+	// Check if 'intersection' actually misses cylinder height
+	float startHeight = localO[2] + localD[2] * closest;
+	float endHeight = localO[2] + localD[2] * furthest;
+
+	//cout << startHeight << endl;
+	//cout << endHeight << endl << endl;
+
+	float intersectionHeight = startHeight;	// Height at which ray hits cylinder
+	if (startHeight > height/2) {
+		if (endHeight > height/2) {
+			// 'intersection' actually misses cylinder height
+			//cout << "hi" << endl;
+			return false;
+		}
+		intersectionHeight = height/2;
+	} else if (startHeight < -height/2) {
+		if (endHeight < -height/2) {
+			//cout << "hello" << endl;
+			return false;
+		}
+		intersectionHeight = -height/2;
+	}
+
+	t = (intersectionHeight - localO[2]) / localD[2];
+	//t = 3;
+	return true;
+
+
+
+	/*
 	// Get vector from chosen to point to center
 	//	chosen = o + t*d - center;
 
@@ -238,6 +332,7 @@ bool Cylinder::intersects(const Ray &ray, float& t) const {
 	// Solve infinite intersection and keep closest intersection with finite cylinder
 	vector<float> roots = get_quadratic_positive_roots(A, B, C);
 	return exists_closest_valid_intersection(roots, t);
+	*/
 }
 
 /*	// Check in what t range the ray is within the circle radius

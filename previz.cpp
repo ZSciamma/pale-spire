@@ -177,10 +177,11 @@ void buildScene()
 {
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
 	//shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
+	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, VEC3(0,1,0), 10));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
-	//createFloor();
+	createFloor();
 
-	//shapes.push_back(new Cylinder(VEC3(5, 0.5, 2), 1, 2, VEC3(0, 1, 0), VEC3(0.5, 0.5, 0.5), 10));
+	//shapes.push_back(new Cylinder(VEC3(3, 0.5, 1), 0.5, 1, VEC3(0, 1, 0), VEC3(0.5, 0.5, 0.5), 10));
 
 	//shapes.push_back(new Sphere(VEC3(3, 0.5, 1), 0.5, VEC3(0,1,1)));
 	//shapes.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1), 10));
@@ -239,24 +240,30 @@ void buildScene()
 		const float rayIncrement = magnitude / (float)totalSpheres;
 
 		// store the spheres
-		shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
-		shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
+		VEC3 center = (rightVertex.head<3>() + leftVertex.head<3>()) / 2;
+		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
+		shapes.push_back(new Cylinder(center, 0.05, lengths[x], up, VEC3(1, 0, 0), 10));
+		//shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
+		//shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
+		////shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
+		////shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
 
 		//sphereCenters.push_back(leftVertex.head<3>());
 		//sphereRadii.push_back(0.05);
 		//sphereColors.push_back(VEC3(1,0,0));
-		
+		/*
 		//sphereCenters.push_back(rightVertex.head<3>());
 		//sphereRadii.push_back(0.05);
 		//sphereColors.push_back(VEC3(1,0,0));
 		for (int y = 0; y < totalSpheres; y++)
 		{
 			VEC3 center = ((float)y + 0.5) * rayIncrement * direction + leftVertex.head<3>();
-			shapes.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0), 10));
+			////shapes.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0), 10));
 			//sphereCenters.push_back(center);
 			//sphereRadii.push_back(0.05);
 			//sphereColors.push_back(VEC3(1,0,0));
 		} 
+		*/
 	}
 }
 
@@ -265,7 +272,7 @@ void buildScene()
 int main(int argc, char** argv)
 {
 	string skeletonFilename("01.asf");
-	string motionFilename("01_02.amc");
+	string motionFilename("126_11.amc");
 	//string skeletonFilename("02.asf");
 	//string motionFilename("02_05.amc");
 	
@@ -281,17 +288,17 @@ int main(int argc, char** argv)
 
 	// Note we're going 8 frames at a time, otherwise the animation
 	// is really slow.
-	for (int x = 0; x < 2400; x += 8)
+	for (int x = 0; x < 1200; x += 4)
 	{
 		setSkeletonsToSpecifiedFrame(x);
 		buildScene();
-		incrementCamera(x / 8);
+		incrementCamera(x / 4);
 
 		char buffer[256];
-		sprintf(buffer, "./frames/frame.%04i.ppm", x / 8);
+		sprintf(buffer, "./frames/frame.%04i.ppm", x / 4);
 		//renderImage(windowWidth, windowHeight, buffer);
 		renderImage(buffer);
-		cout << "Rendered " + to_string(x / 8) + " frames" << endl;
+		cout << "Rendered " + to_string(x / 4) + " frames" << endl;
 	}
 
 	return 0;
