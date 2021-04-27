@@ -23,6 +23,7 @@
 #include "ray.h"
 #include "shapes.h"
 #include "raytracer.h"
+#include "shader.h"
 
 #include "skeleton.h"
 #include "displaySkeleton.h"
@@ -44,7 +45,8 @@ VEC3 up(0,1,0);
 float nearPlane = 40;
 float fovy = 60;
 
-vector<const Shape *> world;
+vector<const Shape *> shapes;
+vector<const Light> lights;
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -89,8 +91,9 @@ void renderImage(const string& filename)
 	float* ppmOut = new float[3 * totalCells];
 
 	// Create rendering objects
-	Shader shader;
-	RayTracer raytracer(camera, shader, world);
+	PhysicsWorld world(shapes);	// Calculates intersections
+	Shader shader(lights, world, eye);	// Calculates colours
+	RayTracer raytracer(camera, shader, world);	// Interface handling all raytracing
 
 	for (int y = camera.screenBot; y <= camera.screenTop; y++) {                       // WHAT IF IT'S NOT DIVISIBLE BY 2?
 		for (int x = camera.screenLeft; x <= camera.screenRight; x++) {
@@ -138,30 +141,67 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 	}
 }
 
+// Creates the triangles for the floor
+void createFloor() {
+	// Create floor
+	float floorLevel = 0;
+	for (int x = -6; x < 8; x+=2) {
+		for (int z = -2; z < 6; z+=2) {
+			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
+			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), 10));
+		}
+	}
+
+	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
+}
+
+// Calculates the camera position and direction for this frame
+void incrementCamera(int frame) {
+	if (frame < 100) {
+		eye += VEC3(0.03, 0, 0);
+	} else if (frame < 150) {
+		eye += VEC3(0, 0, -0.05);
+	} else {
+		eye += VEC3(-0.03, 0, -0.03);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // Build a list of spheres in the scene
 //////////////////////////////////////////////////////////////////////////////////
 void buildScene()
 {
-	world.clear();															// DO WE NEED TO DELETE THE SPHERES?
-	world.push_back(new Sphere(VEC3(0, 0, 5), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(3, 0.5, 1), 0.5, VEC3(0,1,1)));
-	world.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1)));
-	//world.push_back(new Sphere(VEC3(1, -1, -10), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(0, 1, -10), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(1, 1, 10), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(1, 1, 1), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(1, 1, 1), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(5, 5, 5), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(0, 0, 5), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Sphere(VEC3(1, 1, 5), 0.5, VEC3(0,1,0)));
-	//world.push_back(new Triangle(VEC3(-100, -100, 2), VEC3(100, -100, 2), VEC3(0, 100, 2), VEC3(0, 1, 0));
+	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
+	shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
+	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
+	createFloor();
+
+	//shapes.push_back(new Sphere(VEC3(3, 0.5, 1), 0.5, VEC3(0,1,1)));
+	//shapes.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1), 10));
+	//shapes.push_back(new Sphere(VEC3(1, -1, -10), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(0, 1, -10), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(0, 1, 10), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(1, 1, 10), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(1, 1, 1), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(1, 1, 1), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(5, 5, 5), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(0, 0, 5), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(1, 1, 5), 0.5, VEC3(0,1,0)));
+	//shapes.push_back(new Triangle(VEC3(-100, -100, 2), VEC3(100, -100, 2), VEC3(0, 100, 2), VEC3(0, 1, 0));
 	//sphereCenters.clear();
 	//sphereRadii.clear();
 	//sphereColors.clear();
+
+	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
+	lights.push_back(Light{ VEC3(-3, 1.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+	lights.push_back(Light{ VEC3(1, 2.5, -1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+
 	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
 
 	// retrieve all the bones of the skeleton
@@ -197,9 +237,8 @@ void buildScene()
 		const float rayIncrement = magnitude / (float)totalSpheres;
 
 		// store the spheres
-		world.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0)));
-		world.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0)));
-		cout << rightVertex.head<3>() << endl;
+		shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
+		shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
 
 		//sphereCenters.push_back(leftVertex.head<3>());
 		//sphereRadii.push_back(0.05);
@@ -211,7 +250,7 @@ void buildScene()
 		for (int y = 0; y < totalSpheres; y++)
 		{
 			VEC3 center = ((float)y + 0.5) * rayIncrement * direction + leftVertex.head<3>();
-			world.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0)));
+			shapes.push_back(new Sphere(center, 0.05, VEC3(1, 0, 0), 10));
 			//sphereCenters.push_back(center);
 			//sphereRadii.push_back(0.05);
 			//sphereColors.push_back(VEC3(1,0,0));
@@ -244,6 +283,7 @@ int main(int argc, char** argv)
 	{
 		setSkeletonsToSpecifiedFrame(x);
 		buildScene();
+		incrementCamera(x / 8);
 
 		char buffer[256];
 		sprintf(buffer, "./frames/frame.%04i.ppm", x / 8);
@@ -254,6 +294,12 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+// NEXT UP:
+	// Make raytracer getClosestIntersection its own class (e.g. shapes wrapper class)
+	//	So shader and raytracer can both import it with no issues
+	// Get full phong shading working
+	// Get cylinders working.
 
 
 
@@ -302,9 +348,9 @@ void rayColor(const VEC3& rayPos, const VEC3& rayDir, VEC3& pixelColor)
 	//int hitID = -1;
 	const Sphere *hitSphere = NULL;
 	float tMinFound = FLT_MAX;
-	for (int y = 0; y < world.size(); y++)
+	for (int y = 0; y < shapes.size(); y++)
 	{
-		const Sphere *sphere = (Sphere *) world[y];
+		const Sphere *sphere = (Sphere *) shapes[y];
 		float smallest = FLT_MAX;
 
 		//if (raySphereIntersect(sphereCenters[y], sphereRadii[y], rayPos, rayDir, tMin))
