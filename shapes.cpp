@@ -136,7 +136,7 @@ bool Triangle::intersects(const Ray &ray, float& t) const {
 
 // Creates the new basis vectors for the ray tracing
 //  Follows computation given in M&S, pg. 145; t is "view-up vector"
-void Cylinder::create_basis_vectors(VEC3 up) {
+void Cylinder::create_basis_vectors(VEC3 up) {						// CHECK THIS IS CORRECT
 	w = up.normalized();
 	// Get any vector perpendicular to the up vector. This is a radius
 	if (w[0] == 0 and w[1] == 0) {
@@ -264,7 +264,7 @@ bool Cylinder::intersects(const Ray &ray, float& t) const {
 
 	// Get closest and furthest time along ray to intersection
 	float closest, furthest;
-	if (roots.size() == 1) {
+	if (roots.size() == 1) {									// CHECK THIS IS CORRECT!
 		closest = roots[0];
 		furthest = roots[0];
 	} else {
