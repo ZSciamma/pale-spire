@@ -126,8 +126,8 @@ bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
 		return false;
 	}
 
-	t = (_f*ak_jb + _e*jc_al + _d*bl_kc) / M;
-	return t < 0;													// SURELY THIS SHOULD BE T > 0?
+	t = -(_f*ak_jb + _e*jc_al + _d*bl_kc) / M;
+	return t > 0;
 }
 
 bool Triangle::intersects(const Ray &ray, float& t) const {

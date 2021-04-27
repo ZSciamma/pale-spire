@@ -16,6 +16,7 @@ bool PhysicsWorld::existsClosestIntersection(const Ray &ray, const Shape *&inter
 
 		// Save intersection
 		if (didIntersect and isClosest) {
+			//cout << latestPoint << endl;;
 			closestTime = latestPoint;
 			intersectShape = shape;
 		}

@@ -143,9 +143,31 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 
 // Creates the triangles for the floor
 void createFloor() {
-	shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
-	shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
-	shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
+	// Create floor
+	float floorLevel = 0;
+	for (int x = -6; x < 8; x+=2) {
+		for (int z = -2; z < 6; z+=2) {
+			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
+			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), 10));
+		}
+	}
+
+	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
+}
+
+// Calculates the camera position and direction for this frame
+void incrementCamera(int frame) {
+	if (frame < 100) {
+		eye += VEC3(0.03, 0, 0);
+	} else if (frame < 150) {
+		eye += VEC3(0, 0, -0.05);
+	} else {
+		eye += VEC3(-0.03, 0, -0.03);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -177,7 +199,8 @@ void buildScene()
 	//sphereColors.clear();
 
 	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
-	lights.push_back(Light{ VEC3(-7, 3.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+	lights.push_back(Light{ VEC3(-3, 1.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+	lights.push_back(Light{ VEC3(1, 2.5, -1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
 
 	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
 
@@ -260,6 +283,7 @@ int main(int argc, char** argv)
 	{
 		setSkeletonsToSpecifiedFrame(x);
 		buildScene();
+		incrementCamera(x / 8);
 
 		char buffer[256];
 		sprintf(buffer, "./frames/frame.%04i.ppm", x / 8);
