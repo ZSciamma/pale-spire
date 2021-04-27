@@ -70,7 +70,15 @@ public:
 class Cylinder : public Shape {
 private:
 	VEC3 u, v, w;	// Basis vectors for calculating cylinder interesections
+	MATRIX3 globalToLocal, localToGlobal;	// Matrices for rotating a point between global and local space
 	void create_basis_vectors(VEC3 up);
+	void initialise_rotation_matrix();
+
+	// Transforms point to local coordinates, relative to the cylinder
+	//	centered at the origin and pointing up the y axis
+	VEC3 transformToLocal(VEC3 point) const;
+	// Transforms point back to global coordinates
+	VEC3 transformToGlobal(VEC3 point) const;
 
 public:
 	VEC3 center;	// The center of the base circle, halfway up the cylinder
