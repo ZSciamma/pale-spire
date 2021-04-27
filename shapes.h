@@ -72,6 +72,12 @@ private:
 	VEC3 u, v, w;	// Basis vectors for calculating cylinder interesections
 	void create_basis_vectors(VEC3 up);
 
+	// Transforms point to local coordinates, relative to the cylinder
+	//	centered at the origin and pointing up the y axis
+	VEC3 transformToLocal(VEC3 point) const;
+	// Transforms point back to global coordinates
+	VEC3 transformToGlobal(VEC3 point) const;
+
 public:
 	VEC3 center;	// The center of the base circle, halfway up the cylinder
 	float radius, height;

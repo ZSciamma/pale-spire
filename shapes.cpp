@@ -139,7 +139,13 @@ bool Triangle::intersects(const Ray &ray, float& t) const {
 void Cylinder::create_basis_vectors(VEC3 up) {
 	w = up.normalized();
 	// Get any vector perpendicular to the up vector. This is a radius
-	v = VEC3(1, 1, (-w[0] -w[1]) / w[2]);
+	if (w[0] == 0 and w[1] == 0) {
+		v = VEC3(1, 0, 0);
+	} else if (w[1] == 0 and w[2] == 0) {
+		v = VEC3(0, 1, 0);
+	} else {
+		v = VEC3(1, (-w[0] -w[2]) / w[1], 1);
+	}
 	v.normalize();
 	// Get the radius perpendicular to the other radius.
 	u = v.cross(w);
@@ -152,8 +158,36 @@ Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour
 	create_basis_vectors(up);
 }
 
+VEC3 Cylinder::transformToLocal(VEC3 point) const {
+	return VEC3(0, 0, 0);
+}
+
+VEC3 Cylinder::transformToGlobal(VEC3 point) const {
+	return VEC3(0, 0, 0);
+}
+
 VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
-	return point - center;				
+	// Get the point in local space (cylinder centered at origin pointing up y axis)
+	VEC3 localPoint = transformToLocal(point);
+
+	// Check if point is on circular edges ("top" and "bottom")
+	bool isOnCircularEdges = pow(point[0], 2) + pow(point[2], 2) < pow(radius, 2);
+
+	// Get normal
+	VEC3 normal;
+	if (isOnCircularEdges) {
+		// Normal points up or down depending on whether point is above or below origin
+		normal = VEC3(0, point[1], 0);
+	} else {
+		// On rounded edges; normal points outwards
+		normal = VEC3(point[0], 0, point[2]);
+	}
+
+	// Transform back to global coordinates
+	normal = transformToGlobal(normal);
+	normal.normalize();
+
+	return normal;			
 }
 
 // Calculates the component-wise product of two vectors

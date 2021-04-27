@@ -176,9 +176,11 @@ void incrementCamera(int frame) {
 void buildScene()
 {
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
-	shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
+	//shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
-	createFloor();
+	//createFloor();
+
+	//shapes.push_back(new Cylinder(VEC3(5, 0.5, 2), 1, 2, VEC3(0, 1, 0), VEC3(0.5, 0.5, 0.5), 10));
 
 	//shapes.push_back(new Sphere(VEC3(3, 0.5, 1), 0.5, VEC3(0,1,1)));
 	//shapes.push_back(new Triangle(VEC3(3, 0.5, 0), VEC3(3, 0.5, 2), VEC3(3, 1.5, 1), VEC3(0,1,1), 10));
