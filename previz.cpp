@@ -18,6 +18,7 @@
 #include <cmath>
 #include <iostream>
 #include <float.h>
+#include <time.h>
 #include "SETTINGS.h"
 
 #include "ray.h"
@@ -141,6 +142,39 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 	}
 }
 
+// Defines a placement of a cylinder (for stars)
+struct CylinderConfig {
+	VEC3 base;	// The base of the cylinder (center of the 'lowest' cross-section)
+	VEC3 up;	// The up vector, pointing up the cylinder's length (normalized)
+	VEC3 colour;
+};
+
+vector<CylinderConfig> starConfigs;
+
+// Sets the positions and colours of all the stars outside the spaceship
+void initialiseStars() {
+	vector<VEC3> allowedColours { VEC3(1, 0, 0), VEC3(0, 1, 0), VEC3(1, 1, 1) };
+
+	// Choose a random number of stars
+	float cylinderNum = rand() % 30 + 50;			// IS THIS RANDOMNESS NECESSARY? WHY NOT JUST CHOOSE ONE
+
+	// For each star, choose a random position and colour
+	for (int i = 0; i < cylinderNum; cylinderNum++) {
+		// Choose a base for the cylinder within the allowed space
+		VEC3 base = VEC3(10, 0.5, 1);
+
+		// Compute the up vector so it makes a circular pattern around the ship
+		VEC3 up = VEC3(0, 0, 0);
+
+		// Choose a random colour 
+		float colourIndex = rand() % allowedColours.size(); 
+		VEC3 colour = allowedColours[colourIndex];
+
+		// Add the star
+		starConfigs.push_back(CylinderConfig{ base, up, colour });
+	}
+}
+
 // Creates the triangles for the floor
 void createFloor() {
 	// Create floor
@@ -157,6 +191,29 @@ void createFloor() {
 	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
 	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
 	//shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
+}
+
+// Computes the length of the stars outside of the spaceship for this frame
+//	For the hyperspace effect, the star length increases gradually
+//	to pretend we're shooting through space.
+float computeStarLength(int frameNumber) {
+	if (frameNumber < 100) {
+		return 0.1;
+	}
+	return 0.1 + (frameNumber - 100) * 3;
+}
+
+// Creates the stars for the hyperspace animation
+void createStars(int frameNumber) {
+	// Calculate the length of stars for this frame
+	float starLength = computeStarLength(frameNumber);
+
+	// Create all cylinders
+	for (CylinderInfo config : starConfigs) {
+		VEC3 center = config.base + config.up * starLength/2;
+		shapes.push_back(new Cylinder(center , starLength, config.up, config.colour, 10));
+	}
+
 }
 
 // Calculates the camera position and direction for this frame
@@ -180,6 +237,7 @@ void buildScene()
 	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, VEC3(0,1,0), 10));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
 	createFloor();
+	createStars();
 
 	//shapes.push_back(new Cylinder(VEC3(3, 0.5, 1), 0.5, 1, VEC3(0, 1, 0), VEC3(0.5, 0.5, 0.5), 10));
 
@@ -271,6 +329,9 @@ void buildScene()
 //////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
+	// Initialise the random generator
+	srand(time(NULL));
+
 	string skeletonFilename("01.asf");
 	string motionFilename("126_11.amc");
 	//string skeletonFilename("02.asf");
@@ -285,6 +346,9 @@ int main(int argc, char** argv)
 	motion = new Motion(motionFilename.c_str(), MOCAP_SCALE, skeleton);
 	displayer.LoadMotion(motion);
 	skeleton->setPosture(*(displayer.GetSkeletonMotion(0)->GetPosture(0)));
+
+	// Setup the stars
+	initialiseStars();
 
 	// Note we're going 8 frames at a time, otherwise the animation
 	// is really slow.
