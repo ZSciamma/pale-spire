@@ -1,7 +1,7 @@
 #include "shader.h"
 #include "material.h"
 
-const int LIGHT_SAMPLE_NUM = 9;	// Number of samples to use for soft shadows
+extern const int SHADOW_LIGHT_SAMPLE_NUM;	// Number of samples to use for soft shadows
 
 Shader::Shader(const vector<const Light> &lights, const PhysicsWorld &world, VEC3 eye)
 	: lights(lights), world(world), eye(eye)
@@ -47,7 +47,7 @@ float Shader::computeShadowVisibilityIntegral(VEC3 point, const Light &light) co
 	float lightWidth = 3;
 
 	// Check if each light sample is visible from the point
-	for (int i = 0; i < LIGHT_SAMPLE_NUM; i++) {
+	for (int i = 0; i < SHADOW_LIGHT_SAMPLE_NUM; i++) {
 		// Generate random point on light 																
 		float lightX = light.pos[0] + ((((float) rand()) / (float) RAND_MAX) - 0.5) * lightWidth;
 		float lightZ = light.pos[2] + ((((float) rand()) / (float) RAND_MAX) - 0.5) * lightWidth;
@@ -60,7 +60,7 @@ float Shader::computeShadowVisibilityIntegral(VEC3 point, const Light &light) co
 	}
 
 	// Return average visibility
-	visibility /= (float) LIGHT_SAMPLE_NUM;
+	visibility /= (float) SHADOW_LIGHT_SAMPLE_NUM;
 	return visibility;
 }
 

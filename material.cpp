@@ -1,6 +1,8 @@
 #include "material.h"
 #include "raytracer.h"
 
+extern const int GLOSSY_REFLECTION_SAMPLE_NUM;	// Number of reflection points to shoot out
+
 Material::Material() {}
 
 Plastic::Plastic(float cPhong)
@@ -90,8 +92,7 @@ GlossyPlastic::GlossyPlastic(float cPhong, RayTracer *&rayTracer)
 	: Plastic(cPhong), rayTracer(rayTracer) {}
 
 VEC3 GlossyPlastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const {
-	int sampleNum = 16;	// Number of reflection points to shoot out
-	float discRadius = 0.25;	// Radius of the reflection disc
+	float discRadius = 0.15;	// Radius of the reflection disc. Increasing makes the glass more frosted.
 	float discDistance = 5;		// Distance of disc from point on shape
 
 	//assert(eyeDir.norm() == 1.0);
@@ -122,7 +123,7 @@ VEC3 GlossyPlastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal
 	VEC3 colour(0, 0,  0);
 	int counter = 0;
 
-	for (int i = 0; i < sampleNum; i++) {
+	for (int i = 0; i < GLOSSY_REFLECTION_SAMPLE_NUM; i++) {
 		counter++;
 		if (counter > 10) {
 			break;
@@ -155,5 +156,7 @@ VEC3 GlossyPlastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal
 		colour += rayTracer->calculateColour(sampleRay);
 	}
 
-	return colour / (float) sampleNum;
+	return 0.2 * shape->colour + 0.7 * (colour / (float) GLOSSY_REFLECTION_SAMPLE_NUM);
+	//	0.3 0.3: alright, but colour of reflection doesn't come out unless base is white
+	//	0.3 0.5: decent 
 }

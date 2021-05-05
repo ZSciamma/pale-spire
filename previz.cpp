@@ -38,8 +38,8 @@ DisplaySkeleton displayer;
 Skeleton* skeleton;
 Motion* motion;
 
-int windowWidth = 640;
-int windowHeight = 480;
+extern const int WINDOW_WIDTH;
+extern const int WINDOW_HEIGHT;
 
 VEC3 eye(-2, 0.5, 1);
 //VEC3 eye(-6, 0.5, 1);
@@ -94,7 +94,7 @@ float clamp(float value)
 
 void renderImage(const string& filename) 
 {
-	Camera camera(windowWidth, windowHeight, eye, lookingAt, up, nearPlane, fovy);
+	Camera camera(WINDOW_WIDTH, WINDOW_HEIGHT, eye, lookingAt, up, nearPlane, fovy);
 
 	// allocate the final image
 	const int totalCells = camera.xRes * camera.yRes;
