@@ -1,4 +1,5 @@
 #include "material.h"
+#include "raytracer.h"
 
 Material::Material() {}
 
@@ -83,4 +84,76 @@ VEC3 Metal::calculateShading(const Shape *shape, VEC3 point, VEC3 normal, const 
 	// final color
 	VEC4 finalColor = 0.4*VEC4(diffuse[0], diffuse[1], diffuse[2], 1.0) + 0.8*VEC4(specular[0], specular[1], specular[2], 1.0);
 	return VEC3(finalColor[0], finalColor[1], finalColor[2]);
+}
+
+GlossyPlastic::GlossyPlastic(float cPhong, RayTracer *&rayTracer)
+	: Plastic(cPhong), rayTracer(rayTracer) {}
+
+VEC3 GlossyPlastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const {
+	int sampleNum = 16;	// Number of reflection points to shoot out
+	float discRadius = 0.25;	// Radius of the reflection disc
+	float discDistance = 5;		// Distance of disc from point on shape
+
+	//assert(eyeDir.norm() == 1.0);
+	//assert(normal.norm() == 1.0);
+
+	// Calculate reflection direction
+	VEC3 reflection = -eyeDir + 2 * normal * normal.dot(eyeDir);
+
+	// Calculate basis vectors for disc
+	VEC3 w = reflection.normalized();
+	VEC3 v;
+	// Get any vector perpendicular to the up vector. This is a radius
+	if (w[0] == 0 and w[1] == 0) {
+		v = VEC3(1, 0, 0);
+	} else if (w[1] == 0 and w[2] == 0) {
+		v = VEC3(0, 1, 0);
+	} else {
+		v = VEC3(1, (-w[0] -w[2]) / w[1], 1);
+	}
+	v.normalize();
+	// Get the radius perpendicular to the other radius.
+	VEC3 u = v.cross(w);
+	u.normalize();
+
+	// Get the center of the disc
+	VEC3 disc_center = point + reflection * discDistance;
+
+	VEC3 colour(0, 0,  0);
+	int counter = 0;
+
+	for (int i = 0; i < sampleNum; i++) {
+		counter++;
+		if (counter > 10) {
+			break;
+		}
+		// Get random distances along x and y radius
+		float localX = discRadius;
+		float localY = discRadius;
+
+		// Randomly generate points until we have one inside the disc
+		while (pow(localX, 2) + pow(localY, 2) > pow(discRadius, 2)) {			// MAKE THIS MORE EFFICIENT!!!!
+			// Shoot out a point on the disc
+			localX = 2 * discRadius * (-0.5 + ((float) (rand()) / (float) RAND_MAX));
+			localY = 2 * discRadius * (-0.5 + ((float) (rand()) / (float) RAND_MAX));
+		}
+
+		// Convert to global point on disc
+		VEC3 sample = disc_center + u * localX + v * localY;
+
+		// Shoot ray through this point
+		VEC3 dir = (sample - point).normalized();
+		Ray sampleRay = Ray(point + 0.01 * dir, dir);			// CHECK RAY DOESN'T GO INSIDE SURFACE!!!!
+		
+		// If ray goes inside surface, find another one
+		bool goesBelowSurface = normal.dot(sampleRay.d) <= 0;				// IS THIS CORRECT??
+		if (goesBelowSurface) {
+			i -= 1;
+			continue;
+		}
+
+		colour += rayTracer->calculateColour(sampleRay);
+	}
+
+	return colour / (float) sampleNum;
 }

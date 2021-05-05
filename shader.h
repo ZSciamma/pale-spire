@@ -5,7 +5,7 @@
 #define _SHADER_H
 
 #include "shapes.h"
-#include "material.h"
+#include "light.h"
 #include "physicsWorld.h"
 
 using namespace std;
@@ -16,12 +16,14 @@ class Shader {
 	VEC3 eye;
 
 	// Calculates the Phong shading for a single source
-	VEC3 calculateSourcePhongShading(VEC3 point, const Light &light, const Shape *shape, VEC3 normal, VEC3 eyeDir) const;
+	//VEC3 calculateSourcePhongShading(VEC3 point, const Light &light, const Shape *shape, VEC3 normal, VEC3 eyeDir) const;
 	// Calculates the Cook-Torrance shading for a single source
-	VEC3 calculateSourceCookTorranceShading(VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const;
+	//VEC3 calculateSourceCookTorranceShading(VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const;
 
 	// Returns true if a point is blocked from the light
 	bool isOccludedFromLight(VEC3 point, const Light &light) const;
+	// Approximates the shadow visibility integral for soft shadows
+	float computeShadowVisibilityIntegral(VEC3 point, const Light &light) const;
 
 public:
 	Shader(const vector<const Light> &lights, const PhysicsWorld &world, VEC3 eye);

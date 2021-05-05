@@ -9,7 +9,6 @@
 
 class Material {
 public:
-
 	Material();
 
 	// Calculates the colour at this point using the material's specific lighting model
@@ -42,5 +41,21 @@ public:
 	// Uses Cook-Torrance, from Professor Kim's BDRFs code (see material.cpp)
 	VEC3 calculateShading(const Shape *shape, VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const;
 };
+
+
+class RayTracer;
+
+// Nicer plastic using Glossy Reflections
+class GlossyPlastic: public Plastic {
+public:
+	float cPhong;
+	RayTracer *&rayTracer;	// Used to calculate the colour of other rays we need to create
+
+	GlossyPlastic(float cPhong, RayTracer *&rayTracer);
+
+	// Uses Glossy Reflections
+	VEC3 calculateShading(const Shape *shape, VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const;
+};
+
 
 #endif

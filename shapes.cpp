@@ -187,26 +187,29 @@ VEC3 Cylinder::transformToGlobal(VEC3 point) const {
 }
 
 VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
-	// Get the point in local space (cylinder centered at origin pointing up y axis)
+	// Get the point in local space (cylinder centered at origin pointing up z axis)
 	VEC3 localPoint = transformToLocal(point);
 
 	// Check if point is on circular edges ("top" and "bottom")
 	//bool isOnCircularEdges = pow(point[0], 2) + pow(point[2], 2) < pow(radius, 2);
 	bool isOnCircularEdges = pow(localPoint[0], 2) + pow(localPoint[1], 2) < pow(radius, 2);				// IS THIS CORRECT? IS THERE A PROBLEM ON THE EDGES??
-
+	//bool isOnCircularEdges = pow(localPoint[0], 2) + pow(localPoint[2], 2) < pow(radius, 2);				// IS THIS CORRECT? IS THERE A PROBLEM ON THE EDGES??
 	// Get normal
 	VEC3 normal;
 	if (isOnCircularEdges) {
 		// Normal points up or down depending on whether point is above or below origin
 		//normal = VEC3(0, point[1], 0);
 		normal = VEC3(0, 0, localPoint[2]);
+		//normal = VEC3(0, localPoint[1], 0);
 	} else {
 		// On rounded edges; normal points outwards
 		//normal = VEC3(point[0], 0, point[2]);
+		//normal = VEC3(localPoint[0], 0, localPoint[2]);
 		normal = VEC3(localPoint[0], localPoint[1], 0);
 	}
 
 	// Transform back to global coordinates
+	normal.normalize();
 	normal = transformToGlobal(normal);
 	normal.normalize();
 

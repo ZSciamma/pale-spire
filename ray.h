@@ -12,7 +12,7 @@ public:
 	VEC3 o, d;  // Store origin and direction
 	int recurse_depth;
 
-	Ray(VEC3 o, VEC3 d, int recurse_depth = 10);
+	Ray(VEC3 o, VEC3 d, int recurse_depth = 10);						// ADD METHOD FOR GENERATING RAY WITHOUT SHADOW ACNE
 };
 
 #endif

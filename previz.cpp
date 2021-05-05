@@ -41,7 +41,8 @@ Motion* motion;
 int windowWidth = 640;
 int windowHeight = 480;
 
-VEC3 eye(-6, 0.5, 1);
+VEC3 eye(-2, 0.5, 1);
+//VEC3 eye(-6, 0.5, 1);
 VEC3 lookingAt(5, 0.5, 1);
 VEC3 up(0,1,0);
 float nearPlane = 40;
@@ -51,8 +52,11 @@ vector<const Shape *> shapes;
 vector<const Light> lights;
 
 // Materials for rendering
-Plastic plastic(10.0);
-Metal metal(0.2, 0.5);
+RayTracer *tracer = NULL;
+RayTracer *&rayTracer = tracer;
+const Plastic plastic(10.0);
+const Metal metal(0.2, 0.5);
+const GlossyPlastic glossyPlastic(10.0, rayTracer);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -99,13 +103,17 @@ void renderImage(const string& filename)
 	// Create rendering objects
 	PhysicsWorld world(shapes);	// Calculates intersections
 	Shader shader(lights, world, eye);	// Calculates colours
-	RayTracer raytracer(camera, shader, world);	// Interface handling all raytracing
+	if (rayTracer != NULL) {
+		delete rayTracer;
+	}
+	rayTracer = new RayTracer(camera, shader, world);
+	//RayTracer rayTracer(camera, shader, world);	// Interface handling all raytracing
 
 	for (int y = camera.screenBot; y <= camera.screenTop; y++) {                       // WHAT IF IT'S NOT DIVISIBLE BY 2?
 		for (int x = camera.screenLeft; x <= camera.screenRight; x++) {
 			// Get the colour
-			Ray ray = raytracer.generateAtCoord(x, y);
-			VEC3 colour = raytracer.calculateColour(ray);
+			Ray ray = rayTracer->generateAtCoord(x, y);
+			VEC3 colour = rayTracer->calculateColour(ray);
 
 			// set, in final image
 			int startPos = 3 * ((camera.xRes * (camera.screenTop - y)) + (x - camera.screenLeft));
@@ -189,8 +197,8 @@ void createFloor() {
 		for (int z = -2; z < 6; z+=2) {
 			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
 			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
-			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), metal));//VEC3(0.5, 0.5, 0.5), 10));
-			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), metal));//VEC3(0, 1, 0), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), glossyPlastic));//VEC3(0.5, 0.5, 0.5), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), glossyPlastic));//VEC3(0, 1, 0), 10));
 		}
 	}
 
