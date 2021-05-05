@@ -17,13 +17,15 @@
 
 using namespace std;
 
+class Material;
+
 // Abstract class representing any shape in the world
 class Shape {
 public:
 	VEC3 colour;
-	float phong;	// Phong exponent
+	const Material &material;	// The material in which to render the shape
 
-	Shape(VEC3 colour, float phong);
+	Shape(VEC3 colour, const Material &mat);
 
 	// Returns the normal to the shape at that point
 	//	Takes the ray which lands on the shape 
@@ -47,9 +49,9 @@ public:
 	VEC3 center;
 	float radius;
 	VEC3 colour;
-	float phong;
+	const Material &material;
 
-	Sphere(VEC3 center, float radius, VEC3 colour, float phong);
+	Sphere(VEC3 center, float radius, VEC3 colour, const Material &mat);
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
@@ -60,9 +62,9 @@ class Triangle : public Shape {
 public:
 	VEC3 a,b,c;
 	VEC3 colour;
-	float phong;
+	const Material &material;
 
-	Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, float phong);
+	Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, const Material &mat);
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
@@ -84,9 +86,9 @@ public:
 	VEC3 center;	// The center of the base circle, halfway up the cylinder
 	float radius, height;
 	VEC3 colour;
-	float phong;
+	const Material &material;
 
-	Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, float phong);
+	Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, const Material &material);
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };

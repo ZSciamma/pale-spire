@@ -23,6 +23,7 @@
 
 #include "ray.h"
 #include "shapes.h"
+#include "material.h"
 #include "raytracer.h"
 #include "shader.h"
 
@@ -48,6 +49,10 @@ float fovy = 60;
 
 vector<const Shape *> shapes;
 vector<const Light> lights;
+
+// Materials for rendering
+Plastic plastic(10.0);
+Metal metal(0.2, 0.5);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -156,10 +161,11 @@ void initialiseStars() {
 	vector<VEC3> allowedColours { VEC3(1, 0, 0), VEC3(0, 1, 0), VEC3(1, 1, 1) };
 
 	// Choose a random number of stars
-	float cylinderNum = rand() % 30 + 50;			// IS THIS RANDOMNESS NECESSARY? WHY NOT JUST CHOOSE ONE
+	int cylinderNum = 100;
+	//float cylinderNum = rand() % 30 + 50;			// IS THIS RANDOMNESS NECESSARY? WHY NOT JUST CHOOSE ONE
 
 	// For each star, choose a random position and colour
-	for (int i = 0; i < cylinderNum; cylinderNum++) {
+	for (int i = 0; i < cylinderNum; i++) {
 		// Choose a base for the cylinder within the allowed space
 		VEC3 base = VEC3(10, 0.5, 1);
 
@@ -183,8 +189,8 @@ void createFloor() {
 		for (int z = -2; z < 6; z+=2) {
 			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
 			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
-			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), 10));
-			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), metal));//VEC3(0.5, 0.5, 0.5), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), metal));//VEC3(0, 1, 0), 10));
 		}
 	}
 
@@ -207,11 +213,12 @@ float computeStarLength(int frameNumber) {
 void createStars(int frameNumber) {
 	// Calculate the length of stars for this frame
 	float starLength = computeStarLength(frameNumber);
+	float radius = 0.1;
 
 	// Create all cylinders
-	for (CylinderInfo config : starConfigs) {
+	for (CylinderConfig config : starConfigs) {
 		VEC3 center = config.base + config.up * starLength/2;
-		shapes.push_back(new Cylinder(center , starLength, config.up, config.colour, 10));
+		shapes.push_back(new Cylinder(center, radius, starLength, config.up, config.colour, metal));
 	}
 
 }
@@ -230,14 +237,15 @@ void incrementCamera(int frame) {
 //////////////////////////////////////////////////////////////////////////////////
 // Build a list of spheres in the scene
 //////////////////////////////////////////////////////////////////////////////////
-void buildScene()
+void buildScene(int frameNumber)
 {
+	cout << "building scene" << endl;
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
 	//shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
-	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, VEC3(0,1,0), 10));
+	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, VEC3(0,1,0), metal));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
 	createFloor();
-	createStars();
+	//createStars(frameNumber);
 
 	//shapes.push_back(new Cylinder(VEC3(3, 0.5, 1), 0.5, 1, VEC3(0, 1, 0), VEC3(0.5, 0.5, 0.5), 10));
 
@@ -300,7 +308,7 @@ void buildScene()
 		// store the spheres
 		VEC3 center = (rightVertex.head<3>() + leftVertex.head<3>()) / 2;
 		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
-		shapes.push_back(new Cylinder(center, 0.05, lengths[x], up, VEC3(1, 0, 0), 10));
+		shapes.push_back(new Cylinder(center, 0.05, lengths[x], up, VEC3(1, 0, 0), plastic));
 		//shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
 		//shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
 		////shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
@@ -350,19 +358,20 @@ int main(int argc, char** argv)
 	// Setup the stars
 	initialiseStars();
 
-	// Note we're going 8 frames at a time, otherwise the animation
+	// Note we're going 4 frames at a time, otherwise the animation
 	// is really slow.
-	for (int x = 0; x < 1200; x += 4)
+	int frameIncrement = 4;
+	for (int x = 0; x < 1200; x += frameIncrement)
 	{
 		setSkeletonsToSpecifiedFrame(x);
-		buildScene();
-		incrementCamera(x / 4);
+		buildScene(x / frameIncrement);
+		incrementCamera(x / frameIncrement);
 
 		char buffer[256];
 		sprintf(buffer, "./frames/frame.%04i.ppm", x / 4);
 		//renderImage(windowWidth, windowHeight, buffer);
 		renderImage(buffer);
-		cout << "Rendered " + to_string(x / 4) + " frames" << endl;
+		cout << "Rendered " + to_string(x / frameIncrement) + " frames" << endl;
 	}
 
 	return 0;
