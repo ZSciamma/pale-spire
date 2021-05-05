@@ -5,11 +5,10 @@
 #define _SHADER_H
 
 #include "shapes.h"
+#include "material.h"
 #include "physicsWorld.h"
 
-struct Light {
-	VEC3 pos, colour;
-};
+using namespace std;
 
 class Shader {
 	const vector<const Light> &lights;	// List of all the lights in the scene
@@ -18,6 +17,9 @@ class Shader {
 
 	// Calculates the Phong shading for a single source
 	VEC3 calculateSourcePhongShading(VEC3 point, const Light &light, const Shape *shape, VEC3 normal, VEC3 eyeDir) const;
+	// Calculates the Cook-Torrance shading for a single source
+	VEC3 calculateSourceCookTorranceShading(VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const;
+
 	// Returns true if a point is blocked from the light
 	bool isOccludedFromLight(VEC3 point, const Light &light) const;
 

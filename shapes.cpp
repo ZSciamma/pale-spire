@@ -1,10 +1,10 @@
 #include "shapes.h"
 
-Shape::Shape(VEC3 colour, float phong) : colour(colour), phong(phong)
+Shape::Shape(VEC3 colour, const Material &mat) : colour(colour), material(mat)
 {}
 
-Sphere::Sphere(VEC3 center, float radius, VEC3 colour, float phong)
-	: Shape(colour, phong), center(center), radius(radius)
+Sphere::Sphere(VEC3 center, float radius, VEC3 colour, const Material &mat)
+	: Shape(colour, mat), center(center), radius(radius), material(mat)
 {}
 
 // Returns all positive roots of a quadratic equation, given the coefficients
@@ -73,8 +73,8 @@ bool Sphere::intersects(const Ray &ray, float &t) const {
 	return hasSmallestPositiveRoot(roots, t);
 }
 
-Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, float phong)
-	: Shape(colour, phong), a(a), b(b), c(c)
+Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, const Material &mat)
+	: Shape(colour, mat), a(a), b(b), c(c), material(mat)
 {}
 
 VEC3 Triangle::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
@@ -171,8 +171,8 @@ void Cylinder::initialise_rotation_matrix() {
 	globalToLocal = localToGlobal.inverse().eval();
 }
 
-Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, float phong)
-	: Shape(colour, phong), center(center), radius(radius), height(height)
+Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, const Material &mat)
+	: Shape(colour, mat), center(center), radius(radius), height(height), material(mat)
 {
 	create_basis_vectors(up);
 	initialise_rotation_matrix();
