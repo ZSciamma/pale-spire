@@ -5,7 +5,7 @@
 #define _SHADER_H
 
 #include "shapes.h"
-#include "material.h"
+#include "light.h"
 #include "physicsWorld.h"
 
 using namespace std;
