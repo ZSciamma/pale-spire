@@ -41,7 +41,8 @@ Motion* motion;
 int windowWidth = 640;
 int windowHeight = 480;
 
-VEC3 eye(-6, 0.5, 1);
+VEC3 eye(-2, 0.5, 1);
+//VEC3 eye(-6, 0.5, 1);
 VEC3 lookingAt(5, 0.5, 1);
 VEC3 up(0,1,0);
 float nearPlane = 40;

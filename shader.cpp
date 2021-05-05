@@ -1,5 +1,7 @@
 #include "shader.h"
 
+const int LIGHT_SAMPLE_NUM = 9;	// Number of samples to use for soft shadows
+
 Shader::Shader(const vector<const Light> &lights, const PhysicsWorld &world, VEC3 eye)
 	: lights(lights), world(world), eye(eye)
 {}
@@ -35,6 +37,32 @@ bool Shader::isOccludedFromLight(VEC3 point, const Light &light) const {
 	return intersects;
 }
 
+// Calculates the fraction of the light surface visible from this point
+//	Used for soft shadows. Uses random sampling to avoid strobing.
+//	Approximates the visibility integral by sampling points on the light.
+float Shader::computeShadowVisibilityIntegral(VEC3 point, const Light &light) const {
+	// Calculate random points on the light surface
+	float visibility = 0;
+	float lightWidth = 3;
+
+	// Check if each light sample is visible from the point
+	for (int i = 0; i < LIGHT_SAMPLE_NUM; i++) {
+		// Generate random point on light 																
+		float lightX = light.pos[0] + ((((float) rand()) / (float) RAND_MAX) - 0.5) * lightWidth;
+		float lightZ = light.pos[2] + ((((float) rand()) / (float) RAND_MAX) - 0.5) * lightWidth;
+		Light sample{VEC3(lightX, light.pos[1], lightZ), light.colour};				// FIX LIGHTS CAN ONLY BE HORIZONTAL!!!!
+
+		// Check if point is visible
+		if (not isOccludedFromLight(point, sample)) {
+			visibility += 1;
+		}
+	}
+
+	// Return average visibility
+	visibility /= (float) LIGHT_SAMPLE_NUM;
+	return visibility;
+}
+
 // Calculates full 3-term lighting with shadows
 //  Computes diffuse lighting and specular highligts for all lights
 VEC3 Shader::calculateShading(VEC3 point, const Shape *shape, const Ray &ray) const {
@@ -49,14 +77,17 @@ VEC3 Shader::calculateShading(VEC3 point, const Shape *shape, const Ray &ray) co
 	
 	// Sum shading for all lights
 	for (const Light &light : lights) { 
+		/*
 		// If occluder exists, ignore shading
 		bool isOccluded = isOccludedFromLight(point, light);
 		if (isOccluded) {
 			continue;
 		}
-
+		*/
+		float fraction = computeShadowVisibilityIntegral(point, light);
+		colour += fraction * shape->material.calculateShading(shape, point, normal, light, eyeDir);
 		//colour += calculateSourcePhongShading(point, light, shape, normal, eyeDir);
-		colour += shape->material.calculateShading(shape, point, normal, light, eyeDir);
+		//colour += shape->material.calculateShading(shape, point, normal, light, eyeDir);
 
 	}
 
