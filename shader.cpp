@@ -1,6 +1,8 @@
 #include "shader.h"
 #include "material.h"
 
+const int LIGHT_SAMPLE_NUM = 9;	// Number of samples to use for soft shadows
+
 Shader::Shader(const vector<const Light> &lights, const PhysicsWorld &world, VEC3 eye)
 	: lights(lights), world(world), eye(eye)
 {}
