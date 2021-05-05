@@ -1,4 +1,5 @@
 #include "shader.h"
+#include "material.h"
 
 Shader::Shader(const vector<const Light> &lights, const PhysicsWorld &world, VEC3 eye)
 	: lights(lights), world(world), eye(eye)
@@ -40,7 +41,7 @@ bool Shader::isOccludedFromLight(VEC3 point, const Light &light) const {
 VEC3 Shader::calculateShading(VEC3 point, const Shape *shape, const Ray &ray) const {
 	// Return black if no intersection
 	if (shape == NULL) {
-		return VEC3(1, 1, 1);
+		return VEC3(0, 0, 0);
 	}
 
 	VEC3 colour = VEC3(0, 0, 0);
