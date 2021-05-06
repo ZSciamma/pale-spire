@@ -4,7 +4,7 @@ Shape::Shape(const Material &mat, VEC3 colour)
 	: baseColour(colour), material(mat)
 {}
 
-Shape::Shape(const Material &mat, Texture *tex) 
+Shape::Shape(const Material &mat, const Texture *tex) 
 	: Shape(mat, VEC3(0, 0, 0))
 {
 	texture = tex;
@@ -14,11 +14,20 @@ VEC3 Shape::getColourAt(VEC3 point) const {
 	return baseColour;
 }
 
+// Calculates the component-wise product of two vectors
+VEC3 Shape::hadamard(VEC3 a, VEC3 b) {
+	return VEC3(a[0]*b[0], a[1]*b[1], a[2]*b[2]);
+}
+
+
+//////////////////////////////////// SPHERE //////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
 Sphere::Sphere(VEC3 center, float radius, const Material &mat, VEC3 colour)
 	: Shape(mat, colour), center(center), radius(radius), material(mat)
 {}
 
-Sphere::Sphere(VEC3 center, float radius, const Material &mat, Texture *tex)
+Sphere::Sphere(VEC3 center, float radius, const Material &mat, const Texture *tex)
 	: Sphere(center, radius, mat, VEC3(0, 0, 0))
 {
 	texture = tex;
@@ -90,11 +99,15 @@ bool Sphere::intersects(const Ray &ray, float &t) const {
 	return hasSmallestPositiveRoot(roots, t);
 }
 
+
+//////////////////////////////////// TRIANGLE //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour)
 	: Shape(mat, colour), a(a), b(b), c(c), material(mat)
 {}
 
-Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, Texture *tex)
+Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, const Texture *tex)
 	: Triangle(a, b, c, mat, VEC3(0, 0, 0))
 {
 	texture = tex;
@@ -158,6 +171,64 @@ bool Triangle::intersects(const Ray &ray, float& t) const {
 	return intersectsWithRay(ray, t);
 }
 
+// Sets mapping of triangle to texture
+//	So vertex a will map to texA, etc, and any point inside
+//	the triangle will find its location on the texture using 
+//	linear interpolation.
+//	It is the caller's responsibility to provide a sensible mapping.
+void Triangle::setTextureCoords(VEC2 _texA, VEC2 _texB, VEC2 _texC) {
+	texA = _texA;
+	texB = _texB;
+	texC = _texC;
+}
+
+// Calculates the f function needed for barycentric coordinates
+//  Part of the algorithm described on M&S pg. 165
+float Triangle::bary_compute_f(VEC3 a, VEC3 b, float x, float y) const {
+  return (a[2]-b[2])*x + (b[0]-a[0])*y + a[0]*b[2] - b[0]*a[2];
+}
+
+// Returns true if a point is inside a triangle
+//  (x, y) is the point to be checked; a,b,c are the vertices of the triangle
+//  Part of the algorithm described on M&S pg. 165
+VEC3 Triangle::get_bary_parameters(float x, float y) const {
+	//cout << x << " " << y << endl;
+  float alpha = bary_compute_f(b, c, x, y) / bary_compute_f(b, c, a[0], a[2]);
+  float beta = bary_compute_f(c, a, x, y) / bary_compute_f(c, a, b[0], b[2]);
+  float gamma = bary_compute_f(a, b, x, y) / bary_compute_f(a, b, c[0], c[2]);		// OPTIMISE THIS; CALCULATE IN TERMS OF THE OTHERS
+  //bool isInTriangle = (alpha >= 0 and beta >= 0 and gamma >= 0);					// ARE THE EQUALITIES CORRECT? (NOT IN THE TEXT BOOK)
+
+  //cout << alpha << endl;
+  return VEC3(alpha, beta, gamma);
+  //return isInTriangle;
+}
+
+VEC3 Triangle::getColourAt(VEC3 point) const {
+	//cout << "Point: " << point[0] << " " << point[1] << " " << point[2] << endl;
+	//cout << "getting colour" << endl;
+	// Return simple colour if no texture was set
+	if (texture == NULL) {
+		return baseColour;
+	}
+	//cout << "got to texture lookup!" << endl;
+
+	// Interpolate between vertices to get relative location of point on triangle
+	VEC3 params = get_bary_parameters(point[0], point[2]);
+	//cout << "Bary paremeters:" << endl;
+	//cout << params << endl;
+
+	// Place that point at the same relative position on the texture triangle
+	VEC2 uv = params[0] * texA + params[1] * texB + params[2] * texC;
+	//cout << "uv point is: " << uv[0] << " " << uv[1] << endl;
+
+	// Get the pixel
+	return texture->texture_lookup(uv[0], uv[1]);
+}
+
+
+//////////////////////////////////// CYLINDER //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 // Creates the new basis vectors for the ray tracing
 //  Follows computation given in M&S, pg. 145; t is "view-up vector"
 void Cylinder::create_basis_vectors(VEC3 up) {						// CHECK THIS IS CORRECT
@@ -199,7 +270,7 @@ Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, const Mater
 	initialise_rotation_matrix();
 }
 
-Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &mat, Texture *tex)
+Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &mat, const Texture *tex)
 	: Cylinder(center, radius, height, up, mat, VEC3(0, 0, 0))
 {
 	texture = tex;
@@ -225,13 +296,9 @@ VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX TH
 	VEC3 normal;
 	if (isOnCircularEdges) {
 		// Normal points up or down depending on whether point is above or below origin
-		//normal = VEC3(0, point[1], 0);
 		normal = VEC3(0, 0, localPoint[2]);
-		//normal = VEC3(0, localPoint[1], 0);
 	} else {
 		// On rounded edges; normal points outwards
-		//normal = VEC3(point[0], 0, point[2]);
-		//normal = VEC3(localPoint[0], 0, localPoint[2]);
 		normal = VEC3(localPoint[0], localPoint[1], 0);
 	}
 
@@ -241,11 +308,6 @@ VEC3 Cylinder::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX TH
 	normal.normalize();
 
 	return normal;			
-}
-
-// Calculates the component-wise product of two vectors
-VEC3 Shape::hadamard(VEC3 a, VEC3 b) {
-	return VEC3(a[0]*b[0], a[1]*b[1], a[2]*b[2]);
 }
 
 // Returns sum of square of each element
@@ -265,8 +327,6 @@ bool exists_closest_valid_intersection(vector<float> roots, float &t) {
 bool Cylinder::intersects(const Ray &ray, float& t) const {
 	// Transform ray origin and direction to local cylinder space
 	VEC3 localD = transformToLocal(ray.d);
-	//VEC3 localD = ray.d;
-	//VEC3 localO = ray.o;
 	VEC3 localO = transformToLocal(ray.o - center); //transformToLocal(ray.o);
 
 	// Choose point on cylinder
@@ -301,97 +361,27 @@ bool Cylinder::intersects(const Ray &ray, float& t) const {
 		closest = min(roots[0], roots[1]);						// CHECK GREATER THAN 0!!!!!
 		furthest = max(roots[0], roots[1]);
 	}
-	//cout << closest << endl;
-	//cout << furthest << endl << endl;
 
 	// Check if 'intersection' actually misses cylinder height
 	float startHeight = localO[2] + localD[2] * closest;
 	float endHeight = localO[2] + localD[2] * furthest;
 
-	//cout << startHeight << endl;
-	//cout << endHeight << endl << endl;
 
 	float intersectionHeight = startHeight;	// Height at which ray hits cylinder
 	if (startHeight > height/2) {
 		if (endHeight > height/2) {
-			// 'intersection' actually misses cylinder height
-			//cout << "hi" << endl;
 			return false;
 		}
 		intersectionHeight = height/2;
 	} else if (startHeight < -height/2) {
 		if (endHeight < -height/2) {
-			//cout << "hello" << endl;
 			return false;
 		}
 		intersectionHeight = -height/2;
 	}
 
 	t = (intersectionHeight - localO[2]) / localD[2];
-	//t = 3;
+
 	return true;
-
-
-
-	/*
-	// Get vector from chosen to point to center
-	//	chosen = o + t*d - center;
-
-	// Find distance from center along radiusx direction and radiusy direction
-	//	xDist = chosen.dot(radiusX)
-	//	yDist = chosen.dot(radiusY)
-
-	// Check distance from center is radius
-	//	xDist^2 + yDist^2 = radius^2
-	//	(t*d + o-center).dot(radiusX) etc.
-	VEC3 diff = ray.o - center;
-	float A = sum_of_square_elements(hadamard(ray.d, u)) + sum_of_square_elements(hadamard(ray.d, v));
-	float B = 0;
-	float C = -radius * radius;
-	for (int i = 0; i < 3; i++) {						// MAKE THIS MORE EFFICIENT? (store intermediates)
-		for (int j = 0; j < 2; j++) {
-			// t^1 term
-			B += ray.d[i]*u[i] + diff[j]*u[j];
-			B += ray.d[i]*v[i] + diff[j]*v[j];
-			// t^0 term
-			C += diff[i]*u[i] * diff[j]*u[j];
-			C += diff[i]*v[i] * diff[j]*v[j];
-		}
-	}
-
-	// Solve infinite intersection and keep closest intersection with finite cylinder
-	vector<float> roots = get_quadratic_positive_roots(A, B, C);
-	return exists_closest_valid_intersection(roots, t);
-	*/
 }
 
-/*	// Check in what t range the ray is within the circle radius
-	// Extend the ray vector
-	// ((t*d).dot(u))^2 + ((t*d).dot(v))^2 <= radius
-	//float A = sum_of_square_elements(hadamard(ray.d, u)) + sum_of_square_elements(hadamard(ray.d, v));
-	//float B = 
-	//float C = radius;
-
-	// Get radius of cylinder in direction of origin
-
-
-	// Get distance along x radius
-	// td.dot(u)
-
-	// Get distance along y radius
-	// td.dot(v)
-
-
-	// ((t*d).dot(u))^2 + ((t*d).dot(v))^2 +- radius = 0
-	// (td[0]u[0] + td[1]u[1] + td[2]u[2])^2 + (td[0]v[0] + td[1]v[1] + td[2]v[2])^2 +- radius = 0
-	// t^2(d[0]u[0]^2 + d[1]u[1]^2 + d[2]u[2]^2 + ...) + t()
-
-	// dir = ray.o
-	// v1.u1 + v2.u2 + v3.u3 = 0
-
-	// Calculate cylinder radius vector in that plane
-	// Calculate distance between origin and center, along the cylinder radius in that plane
-	// Keep points where distance is equal to radius of cylinder
-	// (o + td)	
-
-*/

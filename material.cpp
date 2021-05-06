@@ -156,6 +156,8 @@ VEC3 GlossyPlastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal
 		colour += rayTracer->calculateColour(sampleRay);
 	}
 
+	//cout << "Glossy plastic: shape colour at point is:" << endl;
+	//cout << shape->getColourAt(point) << endl << endl;
 	return 0.2 * shape->getColourAt(point) + 0.7 * (colour / (float) GLOSSY_REFLECTION_SAMPLE_NUM);
 	//	0.3 0.3: alright, but colour of reflection doesn't come out unless base is white
 	//	0.3 0.5: decent 

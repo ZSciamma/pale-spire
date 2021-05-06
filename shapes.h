@@ -25,10 +25,10 @@ class Shape {
 public:
 	const Material &material;	// The material in which to render the shape
 	VEC3 baseColour;
-	Texture *texture = NULL;
+	const Texture *texture = NULL;
 
 	Shape(const Material &mat, VEC3 colour);
-	Shape(const Material &mat, Texture *texture);
+	Shape(const Material &mat, const Texture *texture);
 
 	// Gets the component-wise product of two vectors
 	static VEC3 hadamard(VEC3 a, VEC3 b);
@@ -44,7 +44,7 @@ public:
 	// Get the colour at that point on the shape
 	//	Gets the appropriate colour from the texture,
 	//	or the base colour of the shape if no texture
-	VEC3 getColourAt(VEC3 point) const;
+	virtual VEC3 getColourAt(VEC3 point) const;
 };
 
 class Sphere : public Shape {
@@ -59,29 +59,46 @@ public:
 	float radius;
 	const Material &material;
 	VEC3 baseColour;
-	Texture *texture = NULL;
+	const Texture *texture = NULL;
 
 	Sphere(VEC3 center, float radius, const Material &mat, VEC3 colour);
-	Sphere(VEC3 center, float radius, const Material &mat, Texture *texture);
+	Sphere(VEC3 center, float radius, const Material &mat, const Texture *texture);
 	
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
 
 class Triangle : public Shape {
+	// The mappings on the texture of vertices a, b, and c
+	VEC2 texA = VEC2(0, 0);
+	VEC2 texB = VEC2(0, 0);
+	VEC2 texC = VEC2(0, 0);
+
 	bool intersectsWithRay(const Ray &ray, float &t) const;
+	// The f function needed for barycentric coordinate computation
+	float bary_compute_f(VEC3 a, VEC3 b, float x, float y) const;
+
+	// Get alpha, beta, gamma to place the point (x, y) on the triangle
+	VEC3 get_bary_parameters(float x, float y) const;
 
 public:
 	VEC3 a,b,c;
 	const Material &material;
 	VEC3 baseColour;
-	Texture *texture = NULL;
+	const Texture *texture = NULL;
 
 	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour);
-	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, Texture *texture);
+	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, const Texture *texture);
 
-	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
-	bool intersects(const Ray &ray, float &t) const;
+	VEC3 getNormalAt(VEC3 point, const Ray &ray) const override;
+	bool intersects(const Ray &ray, float &t) const override;
+	// Sets the coordinates on the texture of vertices a, b, and c respectively
+	void setTextureCoords(VEC2 texA, VEC2 texB, VEC2 texC);
+
+	// Get the colour at that point on the shape
+	//	Gets the appropriate colour from the texture,
+	//	or the base colour of the shape if no texture
+	VEC3 getColourAt(VEC3 point) const override;
 };
 
 class Cylinder : public Shape {
@@ -102,10 +119,10 @@ public:
 	float radius, height;
 	const Material &material;
 	VEC3 baseColour;
-	Texture *texture = NULL;
+	const Texture *texture = NULL;
 
 	Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &material, VEC3 colour);
-	Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &material, Texture *texture);
+	Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &material, const Texture *texture);
 
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;

@@ -5,7 +5,7 @@ CFLAGS     = -std=c++11 -c -O3 -stdlib=libc++
 LDFLAGS    = 
 EXECUTABLE = previz
 
-SOURCES    = previz.cpp renderConfig.cpp skeleton.cpp motion.cpp displaySkeleton.cpp material.cpp shapes.cpp raytracer.cpp physicsWorld.cpp shader.cpp ray.cpp
+SOURCES    = previz.cpp renderConfig.cpp skeleton.cpp motion.cpp displaySkeleton.cpp material.cpp texture.cpp shapes.cpp raytracer.cpp physicsWorld.cpp shader.cpp ray.cpp
 OBJECTS    = $(SOURCES:.cpp=.o)
 
 all: $(SOURCES) $(EXECUTABLE)
