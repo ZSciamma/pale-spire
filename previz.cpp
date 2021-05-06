@@ -111,9 +111,11 @@ void renderImage(const string& filename)
 
 	for (int y = camera.screenBot; y <= camera.screenTop; y++) {                       // WHAT IF IT'S NOT DIVISIBLE BY 2?
 		for (int x = camera.screenLeft; x <= camera.screenRight; x++) {
+			//cout << "tracing a ray" << endl;
 			// Get the colour
 			Ray ray = rayTracer->generateAtCoord(x, y);
 			VEC3 colour = rayTracer->calculateColour(ray);
+			//cout << "getting the colour" << endl;
 
 			// set, in final image
 			int startPos = 3 * ((camera.xRes * (camera.screenTop - y)) + (x - camera.screenLeft));
@@ -197,8 +199,8 @@ void createFloor() {
 		for (int z = -2; z < 6; z+=2) {
 			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
 			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
-			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), VEC3(0.5, 0.5, 0.5), glossyPlastic));//VEC3(0.5, 0.5, 0.5), 10));
-			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), VEC3(0, 1, 0), glossyPlastic));//VEC3(0, 1, 0), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), glossyPlastic, VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+			shapes.push_back(new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), glossyPlastic, VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
 		}
 	}
 
@@ -226,7 +228,7 @@ void createStars(int frameNumber) {
 	// Create all cylinders
 	for (CylinderConfig config : starConfigs) {
 		VEC3 center = config.base + config.up * starLength/2;
-		shapes.push_back(new Cylinder(center, radius, starLength, config.up, config.colour, metal));
+		shapes.push_back(new Cylinder(center, radius, starLength, config.up, metal, config.colour));
 	}
 
 }
@@ -247,12 +249,13 @@ void incrementCamera(int frame) {
 //////////////////////////////////////////////////////////////////////////////////
 void buildScene(int frameNumber)
 {
-	cout << "building scene" << endl;
+	//cout << "building scene" << endl;
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
 	//shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
-	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, VEC3(0,1,0), metal));
+	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, metal, VEC3(0,1,0)));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
 	createFloor();
+	//cout << "finished creating floor" << endl;
 	//createStars(frameNumber);
 
 	//shapes.push_back(new Cylinder(VEC3(3, 0.5, 1), 0.5, 1, VEC3(0, 1, 0), VEC3(0.5, 0.5, 0.5), 10));
@@ -316,7 +319,7 @@ void buildScene(int frameNumber)
 		// store the spheres
 		VEC3 center = (rightVertex.head<3>() + leftVertex.head<3>()) / 2;
 		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
-		shapes.push_back(new Cylinder(center, 0.05, lengths[x], up, VEC3(1, 0, 0), plastic));
+		shapes.push_back(new Cylinder(center, 0.05, lengths[x], up, plastic, VEC3(1, 0, 0)));
 		//shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
 		//shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
 		////shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
@@ -373,6 +376,7 @@ int main(int argc, char** argv)
 	{
 		setSkeletonsToSpecifiedFrame(x);
 		buildScene(x / frameIncrement);
+		//cout << "finished building scene" << endl;
 		incrementCamera(x / frameIncrement);
 
 		char buffer[256];

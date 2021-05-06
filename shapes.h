@@ -14,6 +14,7 @@
 #include "SETTINGS.h"
 
 #include "ray.h"
+#include "texture.h"
 
 using namespace std;
 
@@ -22,10 +23,15 @@ class Material;
 // Abstract class representing any shape in the world
 class Shape {
 public:
-	VEC3 colour;
 	const Material &material;	// The material in which to render the shape
+	VEC3 baseColour;
+	Texture *texture = NULL;
 
-	Shape(VEC3 colour, const Material &mat);
+	Shape(const Material &mat, VEC3 colour);
+	Shape(const Material &mat, Texture *texture);
+
+	// Gets the component-wise product of two vectors
+	static VEC3 hadamard(VEC3 a, VEC3 b);
 
 	// Returns the normal to the shape at that point
 	//	Takes the ray which lands on the shape 
@@ -35,7 +41,10 @@ public:
 	//  Sets to be how far along the ray the shape intersects
 	virtual bool intersects(const Ray &ray, float& t) const = 0;
 
-	static VEC3 hadamard(VEC3 a, VEC3 b);
+	// Get the colour at that point on the shape
+	//	Gets the appropriate colour from the texture,
+	//	or the base colour of the shape if no texture
+	VEC3 getColourAt(VEC3 point) const;
 };
 
 class Sphere : public Shape {
@@ -48,10 +57,13 @@ class Sphere : public Shape {
 public:
 	VEC3 center;
 	float radius;
-	VEC3 colour;
 	const Material &material;
+	VEC3 baseColour;
+	Texture *texture = NULL;
 
-	Sphere(VEC3 center, float radius, VEC3 colour, const Material &mat);
+	Sphere(VEC3 center, float radius, const Material &mat, VEC3 colour);
+	Sphere(VEC3 center, float radius, const Material &mat, Texture *texture);
+	
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
@@ -61,10 +73,13 @@ class Triangle : public Shape {
 
 public:
 	VEC3 a,b,c;
-	VEC3 colour;
 	const Material &material;
+	VEC3 baseColour;
+	Texture *texture = NULL;
 
-	Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, const Material &mat);
+	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour);
+	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, Texture *texture);
+
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };
@@ -85,10 +100,13 @@ private:
 public:
 	VEC3 center;	// The center of the base circle, halfway up the cylinder
 	float radius, height;
-	VEC3 colour;
 	const Material &material;
+	VEC3 baseColour;
+	Texture *texture = NULL;
 
-	Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, const Material &material);
+	Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &material, VEC3 colour);
+	Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &material, Texture *texture);
+
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const;
 	bool intersects(const Ray &ray, float &t) const;
 };

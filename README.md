@@ -19,5 +19,5 @@ An awesome project about spaceships
 
 ## Citations
 
-* We used code provided by Professor Kim for the Cook-Torrance model. This was the BRDF demo, provided on 19th April 2021, in file BRDFs/chapter6/illumination_models/illumination_models/shaders.js, line 113-176. We edited this code to convert it from GLSL to C++. We used it in the file [INSERT FILE HERE] 
+* We used code provided by Professor Kim for the Cook-Torrance model. This was the BRDF demo, provided on 19th April 2021, in file BRDFs/chapter6/illumination_models/shaders.js, line 113-176. We edited this code to convert it from GLSL to C++. We used it in the file [INSERT FILE HERE] 
 

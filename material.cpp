@@ -24,7 +24,7 @@ VEC3 Plastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal, cons
 
 	// Sum all lights
 	VEC3 lightEffects = diffuseColour + specularColour;
-	return Shape::hadamard(shape->colour, lightEffects);
+	return Shape::hadamard(shape->getColourAt(point), lightEffects);
 }
 
 Metal::Metal(float cGaussian, float cReflection)
@@ -38,7 +38,7 @@ Metal::Metal(float cGaussian, float cReflection)
 //	and consistent within the context of our program.
 VEC3 Metal::calculateShading(const Shape *shape, VEC3 point, VEC3 normal, const Light &light, VEC3 eyeDir) const {
 	// material properties
-	VEC3 mat_diffuse = shape->colour;	// Main colour of the material, I think?
+	VEC3 mat_diffuse = shape->getColourAt(point);	// Main colour of the material, I think?
 	//VEC3(0.0, 0.0, 1.0);VEC3(1.0, 1.0, 1.0);
 	VEC3 mat_specular = VEC3(1.0, 1.0, 1.0);	// Brightness of the specular highlights, I think?
 
@@ -156,7 +156,7 @@ VEC3 GlossyPlastic::calculateShading(const Shape *shape, VEC3 point, VEC3 normal
 		colour += rayTracer->calculateColour(sampleRay);
 	}
 
-	return 0.2 * shape->colour + 0.7 * (colour / (float) GLOSSY_REFLECTION_SAMPLE_NUM);
+	return 0.2 * shape->getColourAt(point) + 0.7 * (colour / (float) GLOSSY_REFLECTION_SAMPLE_NUM);
 	//	0.3 0.3: alright, but colour of reflection doesn't come out unless base is white
 	//	0.3 0.5: decent 
 }

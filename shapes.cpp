@@ -1,11 +1,28 @@
 #include "shapes.h"
 
-Shape::Shape(VEC3 colour, const Material &mat) : colour(colour), material(mat)
+Shape::Shape(const Material &mat, VEC3 colour) 
+	: baseColour(colour), material(mat)
 {}
 
-Sphere::Sphere(VEC3 center, float radius, VEC3 colour, const Material &mat)
-	: Shape(colour, mat), center(center), radius(radius), material(mat)
+Shape::Shape(const Material &mat, Texture *tex) 
+	: Shape(mat, VEC3(0, 0, 0))
+{
+	texture = tex;
+}
+
+VEC3 Shape::getColourAt(VEC3 point) const {
+	return baseColour;
+}
+
+Sphere::Sphere(VEC3 center, float radius, const Material &mat, VEC3 colour)
+	: Shape(mat, colour), center(center), radius(radius), material(mat)
 {}
+
+Sphere::Sphere(VEC3 center, float radius, const Material &mat, Texture *tex)
+	: Sphere(center, radius, mat, VEC3(0, 0, 0))
+{
+	texture = tex;
+}
 
 // Returns all positive roots of a quadratic equation, given the coefficients
 //  Assumes Ax^2 + Bx^2 + C = 0
@@ -73,9 +90,15 @@ bool Sphere::intersects(const Ray &ray, float &t) const {
 	return hasSmallestPositiveRoot(roots, t);
 }
 
-Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, VEC3 colour, const Material &mat)
-	: Shape(colour, mat), a(a), b(b), c(c), material(mat)
+Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour)
+	: Shape(mat, colour), a(a), b(b), c(c), material(mat)
 {}
+
+Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, Texture *tex)
+	: Triangle(a, b, c, mat, VEC3(0, 0, 0))
+{
+	texture = tex;
+}
 
 VEC3 Triangle::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
 	// Get vector perpendicular to plane
@@ -90,6 +113,7 @@ VEC3 Triangle::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX TH
 	return normal;
 }
 
+// Uses the method from
 bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
 	// Create matrix
 	float _a = a[0] - b[0];
@@ -150,9 +174,6 @@ void Cylinder::create_basis_vectors(VEC3 up) {						// CHECK THIS IS CORRECT
 	// Get the radius perpendicular to the other radius.
 	u = v.cross(w);
 	u.normalize();								// IS THIS NECESSARY?????
-	//cout << "u: " << u << endl << endl;
-	//cout << "v: " << v << endl << endl;
-	//cout << "w: " << w << endl << endl;
 }
 
 void Cylinder::initialise_rotation_matrix() {
@@ -171,11 +192,17 @@ void Cylinder::initialise_rotation_matrix() {
 	globalToLocal = localToGlobal.inverse().eval();
 }
 
-Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, VEC3 colour, const Material &mat)
-	: Shape(colour, mat), center(center), radius(radius), height(height), material(mat)
+Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &mat, VEC3 colour)
+	: Shape(mat, colour), center(center), radius(radius), height(height), material(mat)
 {
 	create_basis_vectors(up);
 	initialise_rotation_matrix();
+}
+
+Cylinder::Cylinder(VEC3 center, float radius, float height, VEC3 up, const Material &mat, Texture *tex)
+	: Cylinder(center, radius, height, up, mat, VEC3(0, 0, 0))
+{
+	texture = tex;
 }
 
 VEC3 Cylinder::transformToLocal(VEC3 point) const {

@@ -70,6 +70,7 @@ VEC3 RayTracer::calculateColour(const Ray &ray) const {
 	world.existsClosestIntersection(ray, intersectShape, intersectPoint);
 
 	// Calculate shading at intersection point
+	//cout << "calculating shading" << endl;
 	VEC3 shaded = shader.calculateShading(intersectPoint, intersectShape, ray);
 	return shaded;
 }

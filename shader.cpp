@@ -86,6 +86,7 @@ VEC3 Shader::calculateShading(VEC3 point, const Shape *shape, const Ray &ray) co
 		}
 		*/
 		float fraction = computeShadowVisibilityIntegral(point, light);
+		//cout << "asking for shading from material" << endl;
 		colour += fraction * shape->material.calculateShading(shape, point, normal, light, eyeDir);
 		//colour += calculateSourcePhongShading(point, light, shape, normal, eyeDir);
 		//colour += shape->material.calculateShading(shape, point, normal, light, eyeDir);
