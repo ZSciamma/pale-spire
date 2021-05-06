@@ -60,6 +60,7 @@ const Metal metal(0.2, 0.5);
 const GlossyPlastic glossyPlastic(10.0, rayTracer);
 
 const Texture brushedMetal("textures/demo_brushed_metal.ppm", 800, 533);
+const Texture marbleCheckerboard("textures/marble_checkerboard.ppm", 1200, 802);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -116,8 +117,9 @@ void renderImage(const string& filename)
 		for (int x = camera.screenLeft; x <= camera.screenRight; x++) {
 			//cout << "tracing a ray" << endl;
 			// Get the colour
-			Ray ray = rayTracer->generateAtCoord(x, y);
-			VEC3 colour = rayTracer->calculateColour(ray);
+			VEC3 colour = rayTracer->calculateAveragedPixelcolour(x, y);
+			//Ray ray = rayTracer->generateAtCoord(x, y);
+			//VEC3 colour = rayTracer->calculateColour(ray);
 			//cout << "getting the colour" << endl;
 
 			// set, in final image
@@ -202,8 +204,8 @@ void createFloor() {
 		for (int z = -2; z < 6; z+=2) {
 			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
 			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
-			Triangle *triangle1 = new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), glossyPlastic, &brushedMetal);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
-			Triangle *triangle2 = new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), glossyPlastic, &brushedMetal);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
+			Triangle *triangle1 = new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), metal, &marbleCheckerboard);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+			Triangle *triangle2 = new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), metal, &marbleCheckerboard);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
 
 			triangle1->setTextureCoords(VEC2(0, 0), VEC2(1, 0), VEC2(1, 1));
 			triangle2->setTextureCoords(VEC2(0, 0), VEC2(0, 1), VEC2(1, 1));
@@ -244,9 +246,9 @@ void createStars(int frameNumber) {
 
 // Calculates the camera position and direction for this frame
 void incrementCamera(int frame) {
-	if (frame < 100) {
+	if (frame < 20) {
 		eye += VEC3(0.03, 0, 0);
-	} else if (frame < 150) {
+	} else if (frame < 80) {
 		eye += VEC3(0, 0, -0.05);
 	} else {
 		eye += VEC3(-0.03, 0, -0.03);

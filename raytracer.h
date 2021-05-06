@@ -49,6 +49,8 @@ class RayTracer {
 	Camera &camera;  // Camera object viewing the world
 	Shader &shader;
 	PhysicsWorld &world;	// Object that computes intersections of rays and shapes
+	int stratifiedBinNum;	// Number of bins for distributed ray generation using "stratified" sampling
+	float binWidth, binHeight;	// Size of each bin used for "stratified" sampling (1 is the width of a pixel)
 
 	// Computes and sets the dimensions of the real world viewing plane
 	void initialise_viewing_plane_dimensions();
@@ -56,17 +58,21 @@ class RayTracer {
 	// Creates the basis vectors that define the camera frame
 	void initialise_camera_frame();
 
-public:
-	RayTracer(Camera &camera, Shader &shader, PhysicsWorld &world);
-
 	// Generate the ray that goes through this pixel, using perspective projection
 	//  Coord (0, 0) is in the center
-	Ray generateAtCoord(float x, float y) const;
+	Ray generateAtCoord(float x, float y, int binNum) const;
+
+public:
+	RayTracer(Camera &camera, Shader &shader, PhysicsWorld &world);
 
 	// Calculates the colour of the ray
 	// Determines where the ray interesects the scene and computes
 	// 	the colour at that point
 	VEC3 calculateColour(const Ray &ray) const;
+
+	// Calculates the colour of this pixel by generating multipl
+	//	distributed rays and averaging the colours
+	VEC3 calculateAveragedPixelcolour(int x, int y) const;
 };
 
 #endif

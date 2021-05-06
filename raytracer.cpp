@@ -1,5 +1,7 @@
 #include "raytracer.h"
 
+extern const int STRATIFIED_SAMPLING_ROOT;
+
 Camera::Camera(float xRes, float yRes, VEC3 eye, VEC3 lookingAt, VEC3 up, float nearPlane, float fovy) 
 	: xRes(xRes), yRes(yRes), eye(eye), lookingAt(lookingAt),
 	up(up), nearPlane(nearPlane), fovy(fovy)
@@ -49,15 +51,30 @@ RayTracer::RayTracer(Camera &camera, Shader &shader, PhysicsWorld &world)
 {
 	initialise_viewing_plane_dimensions();
 	initialise_camera_frame();
+	stratifiedBinNum = pow(STRATIFIED_SAMPLING_ROOT, 2);
+	binWidth = 1 / (float) STRATIFIED_SAMPLING_ROOT;
+	binHeight = 1 / (float) STRATIFIED_SAMPLING_ROOT;
 }
 
 // Generate the ray that goes through this pixel, using perspective projection
 //  Coord (0, 0) is in the center
-Ray RayTracer::generateAtCoord(float x, float y) const {
+//	binNum is the number of the bin used for stratified sampling
+Ray RayTracer::generateAtCoord(float x, float y, int binNum) const {
+	// Distributed ray tracing: jitter the pixel inside its bin
+	float randX = (float) rand() / (float) RAND_MAX;						// REMOVE RANDOMNESS WHEN THERE'S JUST 1 BIN
+	float randY = (float) rand() / (float) RAND_MAX;
+	x += -0.5 + binWidth * (randX + (float) (binNum % STRATIFIED_SAMPLING_ROOT));
+	y += -0.5 + binHeight * (randY + (float) (binNum / STRATIFIED_SAMPLING_ROOT));
+
+	// Translate camera corner to origin (e.g. range [0, 480])
 	x -= camera.screenLeft;                                                // MAKE THE ITERATION MORE EFFICIENT
 	y -= camera.screenBot;
+
+	// Convert pixel numbers to world range e.g. [worldleft, worldright]
 	float x2 = left + ((right - left) * (x + 0.5) / camera.xRes);            // IS THE +0.5 CORRECT
 	float y2 = bot + ((top - bot) * (y + 0.5) / camera.yRes);        // CHANGE THIS TO FIX CAST!!!
+	
+	// Calculate lookAt point for this ray
 	VEC3 s = (x2 * (-u)) + (y2 * v) - (camera.nearPlane * w);
 	return Ray(camera.eye, (s - camera.eye).normalized());
 };
@@ -73,4 +90,18 @@ VEC3 RayTracer::calculateColour(const Ray &ray) const {
 	//cout << "calculating shading" << endl;
 	VEC3 shaded = shader.calculateShading(intersectPoint, intersectShape, ray);
 	return shaded;
+}
+
+// Calculates the colour for this pixel by averaging it
+//	over all stratified sampling bins
+VEC3 RayTracer::calculateAveragedPixelcolour(int x, int y) const {
+	VEC3 colour(0, 0, 0);
+
+	// Sum colours for ray going through each sampling bin
+	for (int i = 0; i < stratifiedBinNum; i++) {
+		Ray ray = generateAtCoord(x, y, i);
+		colour += calculateColour(ray);
+	}
+
+	return colour / (float) stratifiedBinNum;
 }
