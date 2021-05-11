@@ -27,6 +27,7 @@
 #include "texture.h"
 #include "raytracer.h"
 #include "shader.h"
+#include "spaceship.h"
 
 #include "skeleton.h"
 #include "displaySkeleton.h"
@@ -42,7 +43,7 @@ Motion* motion;
 extern const int WINDOW_WIDTH;
 extern const int WINDOW_HEIGHT;
 
-VEC3 eye(-2, 0.5, 1);
+VEC3 eye(-3, 0.5, 1);
 //VEC3 eye(-6, 0.5, 1);
 VEC3 lookingAt(5, 0.5, 1);
 VEC3 up(0,1,0);
@@ -55,12 +56,13 @@ vector<const Light> lights;
 // Materials for rendering
 RayTracer *tracer = NULL;
 RayTracer *&rayTracer = tracer;
-const Plastic plastic(10.0);
-const Metal metal(0.2, 0.5);
-const GlossyPlastic glossyPlastic(10.0, rayTracer);
+extern const Plastic plastic(10.0);
+extern const Metal metal(0.2, 0.5);
+extern const GlossyPlastic glossyPlastic(10.0, rayTracer);
 
-const Texture brushedMetal("textures/demo_brushed_metal.ppm", 800, 533);
-const Texture marbleCheckerboard("textures/marble_checkerboard.ppm", 1200, 802);
+extern const Texture brushedMetal("textures/demo_brushed_metal.ppm", 800, 533);
+extern const Texture marbleCheckerboard("textures/marble_checkerboard.ppm", 1200, 802);
+extern const Texture blueWood("textures/wooden_blue_ground.ppm", 1920, 1126);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +198,7 @@ void initialiseStars() {
 	}
 }
 
+/*
 // Creates the triangles for the floor
 void createFloor() {
 	// Create floor
@@ -219,6 +222,7 @@ void createFloor() {
 	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
 	//shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
 }
+*/
 
 // Computes the length of the stars outside of the spaceship for this frame
 //	For the hyperspace effect, the star length increases gradually
@@ -265,7 +269,8 @@ void buildScene(int frameNumber)
 	//shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
 	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, metal, VEC3(0,1,0)));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
-	createFloor();
+	//createFloor();
+	createSpaceship(shapes);
 	//cout << "finished creating floor" << endl;
 	//createStars(frameNumber);
 

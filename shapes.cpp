@@ -1,5 +1,7 @@
 #include "shapes.h"
 
+#include <cmath>
+
 Shape::Shape(const Material &mat, VEC3 colour) 
 	: baseColour(colour), material(mat)
 {}
@@ -185,7 +187,7 @@ void Triangle::setTextureCoords(VEC2 _texA, VEC2 _texB, VEC2 _texC) {
 // Calculates the f function needed for barycentric coordinates
 //  Part of the algorithm described on M&S pg. 165
 float Triangle::bary_compute_f(VEC3 a, VEC3 b, float x, float y) const {
-  return (a[2]-b[2])*x + (b[0]-a[0])*y + a[0]*b[2] - b[0]*a[2];
+  return (a[2]-b[2])*x + (b[0]-a[0])*y + a[0]*b[2] - a[2]*b[0];
 }
 
 // Returns true if a point is inside a triangle
@@ -193,14 +195,14 @@ float Triangle::bary_compute_f(VEC3 a, VEC3 b, float x, float y) const {
 //  Part of the algorithm described on M&S pg. 165
 VEC3 Triangle::get_bary_parameters(float x, float y) const {
 	//cout << x << " " << y << endl;
-  float alpha = bary_compute_f(b, c, x, y) / bary_compute_f(b, c, a[0], a[2]);
-  float beta = bary_compute_f(c, a, x, y) / bary_compute_f(c, a, b[0], b[2]);
-  float gamma = bary_compute_f(a, b, x, y) / bary_compute_f(a, b, c[0], c[2]);		// OPTIMISE THIS; CALCULATE IN TERMS OF THE OTHERS
-  //bool isInTriangle = (alpha >= 0 and beta >= 0 and gamma >= 0);					// ARE THE EQUALITIES CORRECT? (NOT IN THE TEXT BOOK)
+	float alpha = bary_compute_f(b, c, x, y) / bary_compute_f(b, c, a[0], a[2]);
+	float beta = bary_compute_f(c, a, x, y) / bary_compute_f(c, a, b[0], b[2]);
+	float gamma = bary_compute_f(a, b, x, y) / bary_compute_f(a, b, c[0], c[2]);		// OPTIMISE THIS; CALCULATE IN TERMS OF THE OTHERS
+	//bool isInTriangle = (alpha >= 0 and beta >= 0 and gamma >= 0);					// ARE THE EQUALITIES CORRECT? (NOT IN THE TEXT BOOK)
 
-  //cout << alpha << endl;
-  return VEC3(alpha, beta, gamma);
-  //return isInTriangle;
+	//cout << alpha << endl;
+	return VEC3(alpha, beta, gamma);
+	//return isInTriangle;
 }
 
 VEC3 Triangle::getColourAt(VEC3 point) const {
@@ -217,7 +219,12 @@ VEC3 Triangle::getColourAt(VEC3 point) const {
 	//cout << "Bary paremeters:" << endl;
 	//cout << params << endl;
 
+	// If point not in triangle for some reason, return red
+	if (isnan(params[0]) or isnan(params[1]) or isnan(params[2]) or params[0] > 1 or params[1] > 1 or params[2] > 1) 
+		return VEC3(1, 0, 0);
+
 	// Place that point at the same relative position on the texture triangle
+	//cout << "params: " << params[0] << " " << params[1] << " " << params[2] << endl;
 	VEC2 uv = params[0] * texA + params[1] * texB + params[2] * texC;
 	//cout << "uv point is: " << uv[0] << " " << uv[1] << endl;
 

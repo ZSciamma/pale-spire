@@ -14,7 +14,7 @@ extern const int WINDOW_HEIGHT = 480;
 extern const int STRATIFIED_SAMPLING_ROOT = 2;	
 
 // Soft shadows: number of random samples to use for each light
-extern const int SHADOW_LIGHT_SAMPLE_NUM = 4;		// 9 is pretty nice
+extern const int SHADOW_LIGHT_SAMPLE_NUM = 2;		// 9 is pretty nice
 
 // Glossy reflections: number of random samples to shoot out of point on glass
 //	for the blurry, frosted-glass reflection effect

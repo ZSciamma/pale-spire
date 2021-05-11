@@ -1,6 +1,6 @@
 #include "texture.h"
 
-// From M&S, page 2444
+// From M&S, page 244
 VEC3 Texture::texture_lookup(float u, float v) const {
 	int i = round(u * (float) xRes - 0.5);
 	//cout << "i: " << i << endl;
@@ -8,6 +8,10 @@ VEC3 Texture::texture_lookup(float u, float v) const {
 	//cout << "j: " << j << endl;
 	int pixel = 3 * ((yRes - j - 1) * xRes + i);	// IS THIS CORRECT?
 	//cout << "ppm point: " << pixel << endl;
+	//cout << pixel << endl;
+	if (pixel >=xRes * yRes * 3 or pixel < 0)									// FIX THIS ERROR!!!!
+		return VEC3(0, 1, 0);
+
 	VEC3 colour(pixelValues[pixel], pixelValues[pixel + 1], pixelValues[pixel + 2]);
 	//cout << colour << endl; 
 	return colour;
