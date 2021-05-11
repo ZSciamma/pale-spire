@@ -24,3 +24,7 @@ An awesome project about spaceships
 ## Texture
 
 * wooden_blue_ground: https://pixabay.com/photos/texture-background-blue-red-wood-2613518/
+* swimming_floor_1: https://pixabay.com/photos/water-swimming-pool-wave-pool-1018808/
+* swimming_wall_1: https://pixabay.com/photos/swimming-pool-pool-tiles-blue-4638912/
+* swimming_marble_1: https://pixabay.com/photos/marble-texture-white-pattern-2362262/
+* empty_frame: https://pixabay.com/photos/picture-frame-metal-frame-picture-1878069/

@@ -105,9 +105,60 @@ bool Sphere::intersects(const Ray &ray, float &t) const {
 //////////////////////////////////// TRIANGLE //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+
+void Triangle::initialise_intersection_values() {
+	_a = a[0] - b[0];
+	cout << "_a: " << _a << endl;
+	_d = a[0] - c[0];
+	_b = a[1] - b[1];
+	_e = a[1] - c[1];
+	_c = a[2] - b[2];
+	_f = a[2] - c[2];
+}
+
+// Initialises the change of basis matrix defining the triangle's plane
+void Triangle::initialise_rotation_matrix() {
+	VEC3 u = (b - a).normalized();
+	VEC3 w = u.cross(c - a).normalized();
+	VEC3 v = u.cross(w).normalized();
+
+	MATRIX3 localToGlobal;
+	localToGlobal.setZero();
+	localToGlobal(0, 0) = u[0];
+	localToGlobal(1, 0) = u[1];
+	localToGlobal(2, 0) = u[2];
+	localToGlobal(0, 1) = v[0];
+	localToGlobal(1, 1) = v[1];
+	localToGlobal(2, 1) = v[2];
+	localToGlobal(0, 2) = w[0];
+	localToGlobal(1, 2) = w[1];
+	localToGlobal(2, 2) = w[2];
+
+	// Invert rotation matrix to reverse transformation
+	globalToLocal = localToGlobal.inverse().eval();
+
+	// Initialise local vertices
+	la = transformToLocal(a);
+	lb = transformToLocal(b);
+	lc = transformToLocal(c);
+}
+
+VEC3 Triangle::transformToLocal(VEC3 point) const {
+	return globalToLocal * point;
+}
+
 Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour)
 	: Shape(mat, colour), a(a), b(b), c(c), material(mat)
-{}
+{
+	// Initialise reused values for intersection checking
+	_a = a[0] - b[0];
+	_d = a[0] - c[0];
+	_b = a[1] - b[1];
+	_e = a[1] - c[1];
+	_c = a[2] - b[2];
+	_f = a[2] - c[2];
+	initialise_rotation_matrix();
+}
 
 Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, const Texture *tex)
 	: Triangle(a, b, c, mat, VEC3(0, 0, 0))
@@ -186,8 +237,8 @@ void Triangle::setTextureCoords(VEC2 _texA, VEC2 _texB, VEC2 _texC) {
 
 // Calculates the f function needed for barycentric coordinates
 //  Part of the algorithm described on M&S pg. 165
-float Triangle::bary_compute_f(VEC3 a, VEC3 b, float x, float y) const {
-  return (a[2]-b[2])*x + (b[0]-a[0])*y + a[0]*b[2] - a[2]*b[0];
+float Triangle::bary_compute_f(VEC3 fa, VEC3 fb, float x, float y) const {
+  return (fa[1]-fb[1])*x + (fb[0]-fa[0])*y + fa[0]*fb[1] - fa[1]*fb[0];
 }
 
 // Returns true if a point is inside a triangle
@@ -195,9 +246,13 @@ float Triangle::bary_compute_f(VEC3 a, VEC3 b, float x, float y) const {
 //  Part of the algorithm described on M&S pg. 165
 VEC3 Triangle::get_bary_parameters(float x, float y) const {
 	//cout << x << " " << y << endl;
-	float alpha = bary_compute_f(b, c, x, y) / bary_compute_f(b, c, a[0], a[2]);
-	float beta = bary_compute_f(c, a, x, y) / bary_compute_f(c, a, b[0], b[2]);
-	float gamma = bary_compute_f(a, b, x, y) / bary_compute_f(a, b, c[0], c[2]);		// OPTIMISE THIS; CALCULATE IN TERMS OF THE OTHERS
+	//cout << "a: " << _a << endl;
+	//cout << "b: " << _b << endl;
+	//cout << "c: " << _c << endl << endl;
+
+	float alpha = bary_compute_f(lb, lc, x, y) / bary_compute_f(lb, lc, la[0], la[1]);
+	float beta = bary_compute_f(lc, la, x, y) / bary_compute_f(lc, la, lb[0], lb[1]);
+	float gamma = bary_compute_f(la, lb, x, y) / bary_compute_f(la, lb, lc[0], lc[1]);		// OPTIMISE THIS; CALCULATE IN TERMS OF THE OTHERS
 	//bool isInTriangle = (alpha >= 0 and beta >= 0 and gamma >= 0);					// ARE THE EQUALITIES CORRECT? (NOT IN THE TEXT BOOK)
 
 	//cout << alpha << endl;
@@ -215,7 +270,10 @@ VEC3 Triangle::getColourAt(VEC3 point) const {
 	//cout << "got to texture lookup!" << endl;
 
 	// Interpolate between vertices to get relative location of point on triangle
-	VEC3 params = get_bary_parameters(point[0], point[2]);
+	VEC3 localPoint = transformToLocal(point);
+	//cout << "Point: " << _point << endl;
+	VEC3 params = get_bary_parameters(localPoint[0], localPoint[1]);
+	//VEC3 params = get_bary_parameters(point[0], point[2]);
 	//cout << "Bary paremeters:" << endl;
 	//cout << params << endl;
 

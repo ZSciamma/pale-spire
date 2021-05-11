@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <cmath>
 #include <iostream>
 #include <float.h>
@@ -35,6 +36,21 @@
 
 using namespace std;
 
+// The starting parameters for the camera
+VEC3 sEYE(-2, 2, -1);	// behind stickfigure
+VEC3 sLOOKINGAT(0.5, 0.5, 1);
+VEC3 sUP(0,1,0);
+
+float nearPlane = 40;
+float fovy = 60;
+
+// Scene controls
+float STICKFIGURE_SPEED = 0.05;	// How fast the stickfigure moves 
+int FRAME_INCREMENT = 8;	// How many frames of the stickfigure to skip per frame
+float FLOOR_LEVEL = -1;
+
+
+
 // Stick-man classes
 DisplaySkeleton displayer;    
 Skeleton* skeleton;
@@ -43,12 +59,13 @@ Motion* motion;
 extern const int WINDOW_WIDTH;
 extern const int WINDOW_HEIGHT;
 
-VEC3 eye(-3, 0.5, 1);
+//VEC3 eye(-3, 0.5, 1);	// original
 //VEC3 eye(-6, 0.5, 1);
-VEC3 lookingAt(5, 0.5, 1);
-VEC3 up(0,1,0);
-float nearPlane = 40;
-float fovy = 60;
+
+// Current parameters for the camera
+VEC3 eye;
+VEC3 lookingAt;
+VEC3 up;
 
 vector<const Shape *> shapes;
 vector<const Light> lights;
@@ -63,6 +80,10 @@ extern const GlossyPlastic glossyPlastic(10.0, rayTracer);
 extern const Texture brushedMetal("textures/demo_brushed_metal.ppm", 800, 533);
 extern const Texture marbleCheckerboard("textures/marble_checkerboard.ppm", 1200, 802);
 extern const Texture blueWood("textures/wooden_blue_ground.ppm", 1920, 1126);
+extern const Texture swimmingFloor("textures/swimming_floor_1.ppm", 1920, 1440);
+extern const Texture swimmingWall("textures/swimming_wall_1.ppm", 1920, 1279);
+extern const Texture swimmingMarble("textures/swimming_marble_1.ppm", 1920, 1285);
+extern const Texture emptyFrame("textures/empty_frame.ppm", 1920, 1309);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -164,6 +185,233 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 	}
 }
 
+
+// Creates the triangles for the floor
+void createFloor() {
+	for (int x = -4; x < 8; x+=2) {
+		for (int z = -2; z < 8; z+=2) {
+			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
+			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
+			Triangle *triangle1 = new Triangle(VEC3(x, FLOOR_LEVEL, z), VEC3(x, FLOOR_LEVEL, z+2), VEC3(x+2, FLOOR_LEVEL, z+2), metal, &swimmingFloor);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+			Triangle *triangle2 = new Triangle(VEC3(x, FLOOR_LEVEL, z), VEC3(x+2, FLOOR_LEVEL, z), VEC3(x+2, FLOOR_LEVEL, z+2), metal, &swimmingFloor);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
+
+			triangle1->setTextureCoords(VEC2(0, 0), VEC2(1, 0), VEC2(1, 1));
+			triangle2->setTextureCoords(VEC2(0, 0), VEC2(0, 1), VEC2(1, 1));
+
+			shapes.push_back(triangle1);
+			shapes.push_back(triangle2);
+		}
+	}
+
+	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
+	//shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
+}
+
+void createWall() {
+	// Create ridge at base of back wall
+	float ridgeHeight = 0.4;	// The height and depth of the ridge
+	Triangle *triangle1 = new Triangle(VEC3(8, FLOOR_LEVEL, -2), VEC3(8, FLOOR_LEVEL, 8), VEC3(8+ridgeHeight, FLOOR_LEVEL+ridgeHeight, -2), metal, &swimmingMarble);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+	Triangle *triangle2 = new Triangle(VEC3(8, FLOOR_LEVEL, 8), VEC3(8+ridgeHeight, FLOOR_LEVEL+ridgeHeight, -2), VEC3(8+ridgeHeight, FLOOR_LEVEL+ridgeHeight, 8), metal, &swimmingMarble);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
+
+	triangle1->setTextureCoords(VEC2(0, 0.2), VEC2(0, 1), VEC2(0.4, 0.2));
+	triangle2->setTextureCoords(VEC2(0, 1), VEC2(0.4, 0.2), VEC2(0.4, 1));
+
+	shapes.push_back(triangle1);
+	shapes.push_back(triangle2);
+
+	// Create back wall
+	float wallDepth = 8 + ridgeHeight;	// The depth of the entire back wall
+	float wallBase = FLOOR_LEVEL + ridgeHeight;	// The base level of the wall
+	float wallHeight = 5;	// Height of a single triangle
+	Triangle *triangle3 = new Triangle(VEC3(wallDepth, wallBase, -2), VEC3(wallDepth, wallBase, 8), VEC3(wallDepth, wallBase+wallHeight, -2), metal, &swimmingWall);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+	Triangle *triangle4 = new Triangle(VEC3(wallDepth, wallBase, 8), VEC3(wallDepth, wallBase+wallHeight, -2), VEC3(wallDepth, wallBase+wallHeight, 8), metal, &swimmingWall);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
+
+	triangle3->setTextureCoords(VEC2(0, 0.2), VEC2(0, 1), VEC2(0.4, 0.2));
+	triangle4->setTextureCoords(VEC2(0, 1), VEC2(0.4, 0.2), VEC2(0.4, 1));
+
+	shapes.push_back(triangle3);
+	shapes.push_back(triangle4);
+
+	// Create ridge at base of right wall
+	float ridgeRight = 8;	// How far on the right the ridge is
+	Triangle *triangle5 = new Triangle(VEC3(8, FLOOR_LEVEL, ridgeRight), VEC3(8, FLOOR_LEVEL+ridgeHeight, ridgeRight+ridgeHeight), VEC3(-4, FLOOR_LEVEL, ridgeRight), metal, &swimmingMarble);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+	Triangle *triangle6 = new Triangle(VEC3(8, FLOOR_LEVEL+ridgeHeight, ridgeRight+ridgeHeight), VEC3(-4, FLOOR_LEVEL, ridgeRight), VEC3(-4, FLOOR_LEVEL+ridgeHeight, ridgeRight+ridgeHeight), metal, &swimmingMarble);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
+
+	triangle5->setTextureCoords(VEC2(0, 0.2), VEC2(0, 1), VEC2(0.4, 0.2));
+	triangle6->setTextureCoords(VEC2(0, 1), VEC2(0.4, 0.2), VEC2(0.4, 1));
+
+	shapes.push_back(triangle5);
+	shapes.push_back(triangle6);
+
+	// Create right wall
+	Triangle *triangle7 = new Triangle(VEC3(8, wallBase, ridgeRight+ridgeHeight), VEC3(8, wallBase+wallHeight, ridgeRight+ridgeHeight), VEC3(-4, wallBase, ridgeRight+ridgeHeight), metal, &swimmingWall);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
+	Triangle *triangle8 = new Triangle(VEC3(8, wallBase+wallHeight, ridgeRight+ridgeHeight), VEC3(-4, wallBase, ridgeRight+ridgeHeight), VEC3(-4, wallBase+wallHeight, ridgeRight+ridgeHeight), metal, &swimmingWall);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
+
+	triangle7->setTextureCoords(VEC2(0, 0.2), VEC2(0, 1), VEC2(0.4, 0.2));
+	triangle8->setTextureCoords(VEC2(0, 1), VEC2(0.4, 0.2), VEC2(0.4, 1));
+
+	shapes.push_back(triangle7);
+	shapes.push_back(triangle8);
+}
+
+// Creates a glossy, surreal cube
+void createGlossyCube() {
+	VEC3 botLeft(2, 0, 3);	// Bottom left corner of the cube
+	float side = 2;	// Side length of the cube
+
+	// Left face
+	shapes.push_back(new Triangle(botLeft, VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
+	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
+
+	// Front face
+	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0]-side, botLeft[1], botLeft[2]+side), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
+	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]+side), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]+side), glossyPlastic, VEC3(0, 0, 0)));
+
+	// Top face
+	shapes.push_back(new Triangle(botLeft, VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
+	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
+
+}
+
+// Calculates the camera position and direction for this frame
+void setCamera(int frame) {
+	// Camera starting position
+	eye = sEYE;
+	lookingAt = sLOOKINGAT;
+	up = sUP;
+
+	// Increment position of camera for every previous frame
+	for (int curFrame = 0; curFrame < frame; curFrame++)
+	{
+		if (curFrame < 20) {
+			eye += VEC3(0.03, 0, 0);
+		} else if (curFrame < 80) {
+			eye += VEC3(0, 0, -0.05);
+		} else {
+			eye += VEC3(-0.03, 0, -0.03);
+		}
+	}
+}
+
+// Calculates the vector to add to the stickfigure's position this frame
+VEC3 computeStickfigureMovement(int frame)
+{
+	return VEC3(0, 0, (float) frame * STICKFIGURE_SPEED);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Build a list of spheres in the scene
+//////////////////////////////////////////////////////////////////////////////////
+void buildScene(int frameNumber)
+{
+	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
+
+	createFloor();
+	createWall();
+	createGlossyCube();
+
+	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
+	lights.push_back(Light{ VEC3(-3, 1.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+	lights.push_back(Light{ VEC3(1, 2.5, -1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+
+	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
+
+	// retrieve all the bones of the skeleton
+	vector<MATRIX4>& rotations = displayer.rotations();
+	vector<MATRIX4>& scalings  = displayer.scalings();
+	vector<VEC4>& translations = displayer.translations();
+	vector<float>& lengths     = displayer.lengths();
+
+	// Get stickfigure movement vector (to add to position)
+	VEC3 stickfigureMovement = computeStickfigureMovement(frameNumber);
+
+	// build a sphere list, but skip the first bone, 
+	// it's just the origin
+	int totalBones = rotations.size();
+	for (int x = 1; x < totalBones; x++)
+	{
+		MATRIX4& rotation = rotations[x];
+		MATRIX4& scaling = scalings[x];
+		VEC4& translation = translations[x];
+
+		// get the endpoints of the cylinder
+		VEC4 leftVertex(0,0,0,1);
+		VEC4 rightVertex(0,0,lengths[x],1);
+
+		leftVertex = rotation * scaling * leftVertex + translation;
+		rightVertex = rotation * scaling * rightVertex + translation;
+
+		// get the direction vector
+		VEC3 direction = (rightVertex - leftVertex).head<3>();
+		const float magnitude = direction.norm();
+		direction *= 1.0 / magnitude;
+
+		// how many spheres?
+		const float sphereRadius = 0.05;
+		const int totalSpheres = magnitude / (2.0 * sphereRadius);
+		const float rayIncrement = magnitude / (float)totalSpheres;
+
+		// store the spheres
+		VEC3 center = (rightVertex.head<3>() + leftVertex.head<3>()) / 2;
+		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
+		shapes.push_back(new Cylinder(center + stickfigureMovement, 0.05, lengths[x], up, plastic, VEC3(1, 0, 0)));
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+int main(int argc, char** argv)
+{
+	// Initialise the random generator
+	srand(time(NULL));
+
+	string skeletonFilename("01.asf");
+	string motionFilename("126_11.amc");
+	//string skeletonFilename("02.asf");
+	//string motionFilename("02_05.amc");
+	
+	// load up skeleton stuff
+	skeleton = new Skeleton(skeletonFilename.c_str(), MOCAP_SCALE);
+	skeleton->setBasePosture();
+	displayer.LoadSkeleton(skeleton);
+
+	// load up the motion
+	motion = new Motion(motionFilename.c_str(), MOCAP_SCALE, skeleton);
+	displayer.LoadMotion(motion);
+	skeleton->setPosture(*(displayer.GetSkeletonMotion(0)->GetPosture(0)));
+
+	// Setup the stars
+	//initialiseStars();
+
+	// Note we're going 4 frames at a time, otherwise the animation
+	// is really slow.
+	int FRAME_INCREMENT = 8;
+	for (int x = 0; x < 300; x ++)
+	{
+		time_t start_time = time(NULL);
+
+		setSkeletonsToSpecifiedFrame(x * FRAME_INCREMENT);
+		buildScene(x);
+		//cout << "finished building scene" << endl;
+		setCamera(x);
+
+		char buffer[256];
+		sprintf(buffer, "./frames/frame.%04i.ppm", x);
+		//renderImage(windowWidth, windowHeight, buffer);
+		renderImage(buffer);
+
+		time_t end_time = time(NULL);
+
+		cout << "Rendered " + to_string(x) + " frames (" << end_time - start_time << "s)" << endl;
+	}
+
+	return 0;
+}
+
+
+
+/*
 // Defines a placement of a cylinder (for stars)
 struct CylinderConfig {
 	VEC3 base;	// The base of the cylinder (center of the 'lowest' cross-section)
@@ -198,32 +446,6 @@ void initialiseStars() {
 	}
 }
 
-/*
-// Creates the triangles for the floor
-void createFloor() {
-	// Create floor
-	float floorLevel = 0;
-	for (int x = -6; x < 8; x+=2) {
-		for (int z = -2; z < 6; z+=2) {
-			//shapes.push_back(new Sphere(VEC3(x, floorLevel-1, z), 1, VEC3(0.5, 0.5, 0.5), 10));
-			//shapes.push_back(new Sphere(VEC3(x+1, floorLevel-0.95, z+1), 1, VEC3(0, 0, 1), 10));
-			Triangle *triangle1 = new Triangle(VEC3(x, floorLevel, z), VEC3(x, floorLevel, z+2), VEC3(x+2, floorLevel, z+2), metal, &marbleCheckerboard);//VEC3(0.5, 0.5, 0.5)));//VEC3(0.5, 0.5, 0.5), 10));
-			Triangle *triangle2 = new Triangle(VEC3(x, floorLevel, z), VEC3(x+2, floorLevel, z), VEC3(x+2, floorLevel, z+2), metal, &marbleCheckerboard);//VEC3(0, 1, 0)));//VEC3(0, 1, 0), 10));
-
-			triangle1->setTextureCoords(VEC2(0, 0), VEC2(1, 0), VEC2(1, 1));
-			triangle2->setTextureCoords(VEC2(0, 0), VEC2(0, 1), VEC2(1, 1));
-
-			shapes.push_back(triangle1);
-			shapes.push_back(triangle2);
-		}
-	}
-
-	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(0, 1, 1), 10));
-	//shapes.push_back(new Triangle(VEC3(3, -1, -2), VEC3(5, -1, 0), VEC3(5, -1, -4), VEC3(0, 1, 1), 10));
-	//shapes.push_back(new Triangle(VEC3(3, -1, 2), VEC3(5, -1, 0), VEC3(5, -1, 4), VEC3(0, 1, 1), 10));
-}
-*/
-
 // Computes the length of the stars outside of the spaceship for this frame
 //	For the hyperspace effect, the star length increases gradually
 //	to pretend we're shooting through space.
@@ -245,32 +467,21 @@ void createStars(int frameNumber) {
 		VEC3 center = config.base + config.up * starLength/2;
 		shapes.push_back(new Cylinder(center, radius, starLength, config.up, metal, config.colour));
 	}
-
 }
 
-// Calculates the camera position and direction for this frame
-void incrementCamera(int frame) {
-	if (frame < 20) {
-		eye += VEC3(0.03, 0, 0);
-	} else if (frame < 80) {
-		eye += VEC3(0, 0, -0.05);
-	} else {
-		eye += VEC3(-0.03, 0, -0.03);
-	}
-}
+*/
 
-//////////////////////////////////////////////////////////////////////////////////
-// Build a list of spheres in the scene
-//////////////////////////////////////////////////////////////////////////////////
-void buildScene(int frameNumber)
-{
+
+
+/*
 	//cout << "building scene" << endl;
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
 	//shapes.push_back(new Sphere(VEC3(5, 0.5, 2), 1, VEC3(0,1,0), 10));
-	shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, metal, VEC3(0,1,0)));
+	//shapes.push_back(new Sphere(VEC3(0.8, 0, 0.8), 0.6, metal, VEC3(0,1,0)));
 	//shapes.push_back(new Triangle(VEC3(-3, 0.5, -1), VEC3(-3, 0.5, 3), VEC3(-1, 1.5, 1), VEC3(0, 0, 1), 10));
-	//createFloor();
-	createSpaceship(shapes);
+	createFloor();
+	createGlossyCube();
+	//createSpaceship(shapes);
 	//cout << "finished creating floor" << endl;
 	//createStars(frameNumber);
 
@@ -294,49 +505,8 @@ void buildScene(int frameNumber)
 	//sphereRadii.clear();
 	//sphereColors.clear();
 
-	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
-	lights.push_back(Light{ VEC3(-3, 1.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
-	lights.push_back(Light{ VEC3(1, 2.5, -1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
 
-	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
-
-	// retrieve all the bones of the skeleton
-	vector<MATRIX4>& rotations = displayer.rotations();
-	vector<MATRIX4>& scalings  = displayer.scalings();
-	vector<VEC4>& translations = displayer.translations();
-	vector<float>& lengths     = displayer.lengths();
-
-	// build a sphere list, but skip the first bone, 
-	// it's just the origin
-	int totalBones = rotations.size();
-	for (int x = 1; x < totalBones; x++)
-	{
-		MATRIX4& rotation = rotations[x];
-		MATRIX4& scaling = scalings[x];
-		VEC4& translation = translations[x];
-
-		// get the endpoints of the cylinder
-		VEC4 leftVertex(0,0,0,1);
-		VEC4 rightVertex(0,0,lengths[x],1);
-
-		leftVertex = rotation * scaling * leftVertex + translation;
-		rightVertex = rotation * scaling * rightVertex + translation;
-
-		// get the direction vector
-		VEC3 direction = (rightVertex - leftVertex).head<3>();
-		const float magnitude = direction.norm();
-		direction *= 1.0 / magnitude;
-
-		// how many spheres?
-		const float sphereRadius = 0.05;
-		const int totalSpheres = magnitude / (2.0 * sphereRadius);
-		const float rayIncrement = magnitude / (float)totalSpheres;
-
-		// store the spheres
-		VEC3 center = (rightVertex.head<3>() + leftVertex.head<3>()) / 2;
-		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
-		shapes.push_back(new Cylinder(center, 0.05, lengths[x], up, plastic, VEC3(1, 0, 0)));
-		//shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
+			//shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
 		//shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
 		////shapes.push_back(new Sphere(leftVertex.head<3>(), 0.05, VEC3(1,0,0), 10));
 		////shapes.push_back(new Sphere(rightVertex.head<3>(), 0.05, VEC3(1, 0, 0), 10));
@@ -344,7 +514,6 @@ void buildScene(int frameNumber)
 		//sphereCenters.push_back(leftVertex.head<3>());
 		//sphereRadii.push_back(0.05);
 		//sphereColors.push_back(VEC3(1,0,0));
-		/*
 		//sphereCenters.push_back(rightVertex.head<3>());
 		//sphereRadii.push_back(0.05);
 		//sphereColors.push_back(VEC3(1,0,0));
@@ -356,180 +525,5 @@ void buildScene(int frameNumber)
 			//sphereRadii.push_back(0.05);
 			//sphereColors.push_back(VEC3(1,0,0));
 		} 
-		*/
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-int main(int argc, char** argv)
-{
-	// Initialise the random generator
-	srand(time(NULL));
-
-	string skeletonFilename("01.asf");
-	string motionFilename("126_11.amc");
-	//string skeletonFilename("02.asf");
-	//string motionFilename("02_05.amc");
-	
-	// load up skeleton stuff
-	skeleton = new Skeleton(skeletonFilename.c_str(), MOCAP_SCALE);
-	skeleton->setBasePosture();
-	displayer.LoadSkeleton(skeleton);
-
-	// load up the motion
-	motion = new Motion(motionFilename.c_str(), MOCAP_SCALE, skeleton);
-	displayer.LoadMotion(motion);
-	skeleton->setPosture(*(displayer.GetSkeletonMotion(0)->GetPosture(0)));
-
-	// Setup the stars
-	initialiseStars();
-
-	// Note we're going 4 frames at a time, otherwise the animation
-	// is really slow.
-	int frameIncrement = 4;
-	for (int x = 0; x < 1200; x += frameIncrement)
-	{
-		setSkeletonsToSpecifiedFrame(x);
-		buildScene(x / frameIncrement);
-		//cout << "finished building scene" << endl;
-		incrementCamera(x / frameIncrement);
-
-		char buffer[256];
-		sprintf(buffer, "./frames/frame.%04i.ppm", x / 4);
-		//renderImage(windowWidth, windowHeight, buffer);
-		renderImage(buffer);
-		cout << "Rendered " + to_string(x / frameIncrement) + " frames" << endl;
-	}
-
-	return 0;
-}
-
-// NEXT UP:
-	// Make raytracer getClosestIntersection its own class (e.g. shapes wrapper class)
-	//	So shader and raytracer can both import it with no issues
-	// Get full phong shading working
-	// Get cylinders working.
-
-
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-// Professor Kim's original code:
-
-/*
-bool raySphereIntersect(const VEC3& center, 
-												const float radius, 
-												const VEC3& rayPos, 
-												const VEC3& rayDir,
-												float& t)
-{
-	const VEC3 op = center - rayPos;
-	const float eps = 1e-8;
-	const float b = op.dot(rayDir);
-	float det = b * b - op.dot(op) + radius * radius;
-
-	// determinant check
-	if (det < 0) 
-		return false; 
-	
-	det = sqrt(det);
-	t = b - det;
-	if (t <= eps)
-	{
-		t = b + det;
-		if (t <= eps)
-			t = -1;
-	}
-
-	if (t < 0) return false;
-	return true;
-}
 */
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-/*
-void rayColor(const VEC3& rayPos, const VEC3& rayDir, VEC3& pixelColor) 
-{
-	pixelColor = VEC3(1,1,1);
-
-	// look for intersections
-	//int hitID = -1;
-	const Sphere *hitSphere = NULL;
-	float tMinFound = FLT_MAX;
-	for (int y = 0; y < shapes.size(); y++)
-	{
-		const Sphere *sphere = (Sphere *) shapes[y];
-		float smallest = FLT_MAX;
-
-		//if (raySphereIntersect(sphereCenters[y], sphereRadii[y], rayPos, rayDir, tMin))
-		const Ray ray = Ray(rayPos, rayDir.normalized(), 10);
-		if (sphere->intersects(ray, smallest))
-		{ 
-			// is the closest so far?
-			if (smallest < tMinFound)
-			{
-				tMinFound = smallest;
-				//hitID = y;
-				hitSphere = sphere;
-			}
-		}
-	}
-	
-	// No intersection, return white
-	if (hitSphere == NULL) {
-		return;
-	}
-	//if (hitID == -1)
-		//return;
-
-	// set to the sphere color
-	//pixelColor = sphereColors[hitID];
-	pixelColor = hitSphere->colour;
-}
-*/
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-/*
-void renderImage(int& xRes, int& yRes, const string& filename) 
-{
-	// allocate the final image
-	const int totalCells = xRes * yRes;
-	float* ppmOut = new float[3 * totalCells];
-
-	// compute image plane
-	const float halfY = (lookingAt - eye).norm() * tan(45.0f / 360.0f * M_PI);
-	const float halfX = halfY * 4.0f / 3.0f;
-
-	const VEC3 cameraZ = (lookingAt - eye).normalized();
-	const VEC3 cameraX = up.cross(cameraZ).normalized();
-	const VEC3 cameraY = cameraZ.cross(cameraX).normalized();
-
-	for (int y = 0; y < yRes; y++) 
-		for (int x = 0; x < xRes; x++) 
-		{
-			const float ratioX = 1.0f - x / float(xRes) * 2.0f;
-			const float ratioY = 1.0f - y / float(yRes) * 2.0f;
-			const VEC3 rayHitImage = lookingAt + 
-															 ratioX * halfX * cameraX +
-															 ratioY * halfY * cameraY;
-			const VEC3 rayDir = (rayHitImage - eye).normalized();
-
-			// get the color
-			VEC3 color;
-			Ray ray = Ray(eye, rayDir, 10);
-			color = raytracer.calculateColour(ray);
-			//rayColor(eye, rayDir, color);
-
-			// set, in final image
-			ppmOut[3 * (y * xRes + x)] = clamp(color[0]) * 255.0f;
-			ppmOut[3 * (y * xRes + x) + 1] = clamp(color[1]) * 255.0f;
-			ppmOut[3 * (y * xRes + x) + 2] = clamp(color[2]) * 255.0f;
-		}
-	writePPM(filename, xRes, yRes, ppmOut);
-
-	delete[] ppmOut;
-}
-*/

@@ -69,10 +69,15 @@ public:
 };
 
 class Triangle : public Shape {
+	VEC3 la, lb, lc;	// Vertices in local coordinate system
+	float _a, _b, _c, _d, _e, _f;	// Some of the intersection checking values to save time
+
 	// The mappings on the texture of vertices a, b, and c
 	VEC2 texA = VEC2(0, 0);
 	VEC2 texB = VEC2(0, 0);
 	VEC2 texC = VEC2(0, 0);
+
+	MATRIX3 globalToLocal;	// For converting between local and global triangle coordinates
 
 	bool intersectsWithRay(const Ray &ray, float &t) const;
 	// The f function needed for barycentric coordinate computation
@@ -80,6 +85,14 @@ class Triangle : public Shape {
 
 	// Get alpha, beta, gamma to place the point (x, y) on the triangle
 	VEC3 get_bary_parameters(float x, float y) const;
+
+	// Initialise the matrices for converting between local and global space
+	void initialise_rotation_matrix();
+
+	// Initialise some of the values used for intersection checking to save time
+	void initialise_intersection_values();
+
+	VEC3 transformToLocal(VEC3 point) const;
 
 public:
 	VEC3 a,b,c;
