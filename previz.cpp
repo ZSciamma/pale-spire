@@ -280,23 +280,30 @@ void createWall() {
 	shapes.push_back(triangle8);
 }
 
-// Creates a glossy, surreal cube
-void createGlossyCube() {
-	VEC3 botLeft(2, 0, 3);	// Bottom left corner of the cube
-	float side = 2;	// Side length of the cube
+// Creates a cube with back-bottom-left corner at location, side lengths, and height. (and texture + color!)
+void createCube(VEC3 loc, float side, float height, const Material& material,  VEC3 color) {
 
-	// Left face
-	shapes.push_back(new Triangle(botLeft, VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
-	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
+	VEC3 A(loc[0] - side, loc[1], loc[2]);
+	VEC3 B(loc[0] - side, loc[1] + side, loc[2]);
+	VEC3 C(loc[0] - side, loc[1] + side, loc[2] + side);
+	VEC3 D(loc[0] - side, loc[1], loc[2] + side);
+	VEC3 E = loc;
+	VEC3 F(loc[0], loc[1] + side, loc[2]);
+	VEC3 G(loc[0], loc[1] + side, loc[2] + side);
+	VEC3 H(loc[0], loc[1], loc[2] + side);
 
-	// Front face
-	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0]-side, botLeft[1], botLeft[2]+side), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
-	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]+side), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]+side), glossyPlastic, VEC3(0, 0, 0)));
-
-	// Top face
-	shapes.push_back(new Triangle(botLeft, VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
-	shapes.push_back(new Triangle(VEC3(botLeft[0]-side, botLeft[1], botLeft[2]), VEC3(botLeft[0], botLeft[1]+side, botLeft[2]), VEC3(botLeft[0]-side, botLeft[1]+side, botLeft[2]), glossyPlastic, VEC3(0, 0, 0)));
-
+	// front face
+	shapes.push_back(new Triangle(A, B, D, material, color));					
+	shapes.push_back(new Triangle(C, D, B, material, color));
+	// left face
+	shapes.push_back(new Triangle(E, F, A, material, color));
+	shapes.push_back(new Triangle(B, A, F, material, color));
+	// right face
+	shapes.push_back(new Triangle(C, G, D, material, color));
+	shapes.push_back(new Triangle(H, D, G, material, color));
+	// back face
+	shapes.push_back(new Triangle(F, G, E, material, color));
+	shapes.push_back(new Triangle(H, E, G, material, color));
 }
 
 
@@ -306,6 +313,53 @@ VEC3 computeStickfigureMovement(int frame)
 	return VEC3(0, 0, (float) frame * STICKFIGURE_SPEED);
 }
 
+void createSkeleton(int frameNumber)
+{
+	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
+
+	// retrieve all the bones of the skeleton
+	vector<MATRIX4>& rotations = displayer.rotations();
+	vector<MATRIX4>& scalings  = displayer.scalings();
+	vector<VEC4>& translations = displayer.translations();
+	vector<float>& lengths     = displayer.lengths();
+
+	// Get stickfigure movement vector (to add to position)
+	VEC3 stickfigureMovement = computeStickfigureMovement(frameNumber);
+
+	// build a sphere list, but skip the first bone, 
+	// it's just the origin
+	int totalBones = rotations.size();
+	for (int x = 1; x < totalBones; x++)
+	{
+		MATRIX4& rotation = rotations[x];
+		MATRIX4& scaling = scalings[x];
+		VEC4& translation = translations[x];
+
+		// get the endpoints of the cylinder
+		VEC4 leftVertex(0,0,0,1);
+		VEC4 rightVertex(0,0,lengths[x],1);
+
+		leftVertex = rotation * scaling * leftVertex + translation;
+		rightVertex = rotation * scaling * rightVertex + translation;
+
+		// get the direction vector
+		VEC3 direction = (rightVertex - leftVertex).head<3>();
+		const float magnitude = direction.norm();
+		direction *= 1.0 / magnitude;
+
+		// how many spheres?
+		const float sphereRadius = 0.05;
+		const int totalSpheres = magnitude / (2.0 * sphereRadius);
+		const float rayIncrement = magnitude / (float)totalSpheres;
+
+		// store the spheres
+		VEC3 center = (rightVertex.head<3>() + leftVertex.head<3>()) / 2;
+		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
+		shapes.push_back(new Cylinder(center + stickfigureMovement, 0.05, lengths[x], up, plastic, VEC3(1, 0, 0)));
+	}
+}
+
+
 
 void buildFirstScene(int frameNumber)
 {
@@ -313,11 +367,18 @@ void buildFirstScene(int frameNumber)
 
 	createFloor();
 	createWall();
-	createGlossyCube();
+	// createGlossyCube();
+	createCube(VEC3(2, 0, 3), 2, 4, glossyPlastic, VEC3(0, 0, 0));		// create a glossy cube!
+
+	createSkeleton(frameNumber);
 
 	lights.clear();													// REMOVE; LIGHTS NEVER NEED TO MOVE
 	lights.push_back(Light{ VEC3(-3, 1.5, 1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
 	lights.push_back(Light{ VEC3(1, 2.5, -1), VEC3(1, 1, 1) });//VEC3(-1, 1.5, 3), VEC3(7, 2.5, 1) });
+
+	
+
+/*
 
 	displayer.ComputeBonePositions(DisplaySkeleton::BONES_AND_LOCAL_FRAMES);
 
@@ -361,6 +422,7 @@ void buildFirstScene(int frameNumber)
 		VEC3 up = rightVertex.head<3>() - leftVertex.head<3>();
 		shapes.push_back(new Cylinder(center + stickfigureMovement, 0.05, lengths[x], up, plastic, VEC3(1, 0, 0)));
 	}
+	*/
 }
 
 
