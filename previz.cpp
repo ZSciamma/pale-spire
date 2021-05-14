@@ -284,12 +284,12 @@ void createWall() {
 void createCube(VEC3 loc, float side, float height, const Material& material,  VEC3 color) {
 
 	VEC3 A(loc[0] - side, loc[1], loc[2]);
-	VEC3 B(loc[0] - side, loc[1] + side, loc[2]);
-	VEC3 C(loc[0] - side, loc[1] + side, loc[2] + side);
+	VEC3 B(loc[0] - side, loc[1] + side + height, loc[2]);
+	VEC3 C(loc[0] - side, loc[1] + side + height, loc[2] + side);
 	VEC3 D(loc[0] - side, loc[1], loc[2] + side);
 	VEC3 E = loc;
-	VEC3 F(loc[0], loc[1] + side, loc[2]);
-	VEC3 G(loc[0], loc[1] + side, loc[2] + side);
+	VEC3 F(loc[0], loc[1] + side + height, loc[2]);
+	VEC3 G(loc[0], loc[1] + side + height, loc[2] + side);
 	VEC3 H(loc[0], loc[1], loc[2] + side);
 
 	// front face
