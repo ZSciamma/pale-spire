@@ -108,7 +108,6 @@ bool Sphere::intersects(const Ray &ray, float &t) const {
 
 void Triangle::initialise_intersection_values() {
 	_a = a[0] - b[0];
-	cout << "_a: " << _a << endl;
 	_d = a[0] - c[0];
 	_b = a[1] - b[1];
 	_e = a[1] - c[1];
@@ -143,6 +142,14 @@ void Triangle::initialise_rotation_matrix() {
 	lc = transformToLocal(c);
 }
 
+// Initialises the values for the sphere intersection heuristic
+void Triangle::initialise_intersection_sphere() {
+	// Create a sphere which will test for intersections first
+	VEC3 center = (a + b + c) / 3;
+	float radius = (center - a).norm();
+	intersectSphere = new Sphere(center, radius, material, baseColour);
+}
+
 VEC3 Triangle::transformToLocal(VEC3 point) const {
 	return globalToLocal * point;
 }
@@ -158,12 +165,18 @@ Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour)
 	_c = a[2] - b[2];
 	_f = a[2] - c[2];
 	initialise_rotation_matrix();
+	baseColour = colour;
+	//initialise_intersection_sphere();
 }
 
 Triangle::Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, const Texture *tex)
 	: Triangle(a, b, c, mat, VEC3(0, 0, 0))
 {
 	texture = tex;
+}
+
+Triangle::~Triangle() {
+	delete intersectSphere;
 }
 
 VEC3 Triangle::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX THIS!!
@@ -180,7 +193,7 @@ VEC3 Triangle::getNormalAt(VEC3 point, const Ray &ray) const {									// FIX TH
 }
 
 // Uses the method from
-bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
+bool Triangle::intersectsWithRay(const Ray &ray, float &t) const {
 	// Create matrix
 	float _a = a[0] - b[0];
 	float _d = a[0] - c[0];
@@ -220,7 +233,14 @@ bool Triangle::intersectsWithRay(const Ray &ray, float& t) const {
 	return t > 0;
 }
 
-bool Triangle::intersects(const Ray &ray, float& t) const {
+bool Triangle::intersects(const Ray &ray, float &t) const {
+	/*
+	if (not intersectSphere->intersects(ray, t)) {
+		return false;
+	}
+	*/
+
+
 	return intersectsWithRay(ray, t);
 }
 
@@ -265,6 +285,7 @@ VEC3 Triangle::getColourAt(VEC3 point) const {
 	//cout << "getting colour" << endl;
 	// Return simple colour if no texture was set
 	if (texture == NULL) {
+		//cout << "returning base colour" << baseColour << endl;
 		return baseColour;
 	}
 	//cout << "got to texture lookup!" << endl;

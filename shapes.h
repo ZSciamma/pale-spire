@@ -71,6 +71,7 @@ public:
 class Triangle : public Shape {
 	VEC3 la, lb, lc;	// Vertices in local coordinate system
 	float _a, _b, _c, _d, _e, _f;	// Some of the intersection checking values to save time
+	Sphere *intersectSphere = NULL;
 
 	// The mappings on the texture of vertices a, b, and c
 	VEC2 texA = VEC2(0, 0);
@@ -92,6 +93,9 @@ class Triangle : public Shape {
 	// Initialise some of the values used for intersection checking to save time
 	void initialise_intersection_values();
 
+	// Create a sphere for simpler intersection testing
+	void initialise_intersection_sphere();
+
 	VEC3 transformToLocal(VEC3 point) const;
 
 public:
@@ -102,6 +106,7 @@ public:
 
 	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, VEC3 colour);
 	Triangle(VEC3 a, VEC3 b, VEC3 c, const Material &mat, const Texture *texture);
+	~Triangle();
 
 	VEC3 getNormalAt(VEC3 point, const Ray &ray) const override;
 	bool intersects(const Ray &ray, float &t) const override;
