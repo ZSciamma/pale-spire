@@ -28,7 +28,6 @@
 #include "texture.h"
 #include "raytracer.h"
 #include "shader.h"
-#include "spaceship.h"
 
 #include "skeleton.h"
 #include "displaySkeleton.h"
@@ -45,11 +44,11 @@ float nearPlane = 40;
 float fovy = 60;
 
 // Scene controls
+float FLOOR_LEVEL = -1;
 float STICKFIGURE_SPEED = 0.05;	// How fast the stickfigure moves 
 int FRAME_INCREMENT = 8;	// How many frames of the stickfigure to skip per frame
-float FLOOR_LEVEL = -1;
 
-
+int SCENE_CHANGE_FRAME = 100;
 
 // Stick-man classes
 DisplaySkeleton displayer;    
@@ -186,6 +185,32 @@ void setSkeletonsToSpecifiedFrame(int frameIndex)
 }
 
 
+
+// Calculates the camera position and direction for this frame
+void setCamera(int frame) {
+	// Camera starting position
+	eye = sEYE;
+	lookingAt = sLOOKINGAT;
+	up = sUP;
+
+	// Increment position of camera for every previous frame
+	for (int curFrame = 0; curFrame < frame; curFrame++)
+	{
+		if (curFrame < 20) {
+			eye += VEC3(0.03, 0, 0);
+		} else if (curFrame < 80) {
+			eye += VEC3(0, 0, -0.05);
+		} else {
+			eye += VEC3(-0.03, 0, -0.03);
+		}
+	}
+}
+
+
+
+//////////////////////////////////////// FIRST SCENE ////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 // Creates the triangles for the floor
 void createFloor() {
 	for (int x = -4; x < 8; x+=2) {
@@ -274,25 +299,6 @@ void createGlossyCube() {
 
 }
 
-// Calculates the camera position and direction for this frame
-void setCamera(int frame) {
-	// Camera starting position
-	eye = sEYE;
-	lookingAt = sLOOKINGAT;
-	up = sUP;
-
-	// Increment position of camera for every previous frame
-	for (int curFrame = 0; curFrame < frame; curFrame++)
-	{
-		if (curFrame < 20) {
-			eye += VEC3(0.03, 0, 0);
-		} else if (curFrame < 80) {
-			eye += VEC3(0, 0, -0.05);
-		} else {
-			eye += VEC3(-0.03, 0, -0.03);
-		}
-	}
-}
 
 // Calculates the vector to add to the stickfigure's position this frame
 VEC3 computeStickfigureMovement(int frame)
@@ -300,10 +306,8 @@ VEC3 computeStickfigureMovement(int frame)
 	return VEC3(0, 0, (float) frame * STICKFIGURE_SPEED);
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-// Build a list of spheres in the scene
-//////////////////////////////////////////////////////////////////////////////////
-void buildScene(int frameNumber)
+
+void buildFirstScene(int frameNumber)
 {
 	shapes.clear();															// DO WE NEED TO DELETE THE SPHERES?
 
@@ -359,10 +363,44 @@ void buildScene(int frameNumber)
 	}
 }
 
+
+//////////////////////////////////////// SECOND SCENE ////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
+void buildSecondScene(int frameNumber) {
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// Build a list of spheres in the scene
+//////////////////////////////////////////////////////////////////////////////////
+
+void buildScene(int frameNumber) {
+	if (frameNumber < SCENE_CHANGE_FRAME) {
+		buildFirstScene(frameNumber);
+	} else {
+		buildSecondScene(frameNumber);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
+
+	// Set frames between which to render, inclusive
+	int startFrame = 0;
+	int endFrame = 299;
+	if (argc > 1) {
+		startFrame = atoi(argv[1]);
+		cout << "startFrame: " << startFrame << endl;
+	}
+	if (argc > 2) {
+		endFrame = atoi(argv[2]);
+	}
+
 	// Initialise the random generator
 	srand(time(NULL));
 
@@ -387,7 +425,7 @@ int main(int argc, char** argv)
 	// Note we're going 4 frames at a time, otherwise the animation
 	// is really slow.
 	int FRAME_INCREMENT = 8;
-	for (int x = 0; x < 300; x ++)
+	for (int x = startFrame; x <= endFrame; x++)
 	{
 		time_t start_time = time(NULL);
 
