@@ -3,8 +3,8 @@
 //	quality and render time of the clip.
 
 // Image resolution: number of pixels in scene
-extern const int WINDOW_WIDTH = 320;
-extern const int WINDOW_HEIGHT = 240;
+extern const int WINDOW_WIDTH = 1600;
+extern const int WINDOW_HEIGHT = 1200;
 
 // Distributed ray tracing: sqrt of number of bins to use in stratified sampling.
 //	Setting it to n will make n^2 bins. For each pixel, the ray tracer generates
@@ -14,8 +14,8 @@ extern const int WINDOW_HEIGHT = 240;
 extern const int STRATIFIED_SAMPLING_ROOT = 2;	
 
 // Soft shadows: number of random samples to use for each light
-extern const int SHADOW_LIGHT_SAMPLE_NUM = 1;		// 9 is pretty nice
+extern const int SHADOW_LIGHT_SAMPLE_NUM = 4;		// 9 is pretty nice
 
 // Glossy reflections: number of random samples to shoot out of point on glass
 //	for the blurry, frosted-glass reflection effect
-extern const int GLOSSY_REFLECTION_SAMPLE_NUM = 1;		// 16 is pretty nice
+extern const int GLOSSY_REFLECTION_SAMPLE_NUM = 9;		// 16 is pretty nice
