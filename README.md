@@ -1,6 +1,6 @@
 # pale-spire
 
-This is our final project for the Yale class Computer Graphics, CPSC 478, Spring 2021. The assignment was to build a 10-second movie scene, with a ray tracing engine built from scratch in C++. Our engine can render triangles, rectangles, and cylinders. It has the following features:
+This is our final project for the Yale class Computer Graphics, CPSC 478, Spring 2021. The assignment was to build a 10-second movie scene, with a distribution ray tracing engine built from scratch in C++. Our engine can render triangles, rectangles, and cylinders. It has the following features:
 
 * Soft shadows
 * Glossy reflections
