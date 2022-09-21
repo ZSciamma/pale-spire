@@ -1,23 +1,25 @@
-# pale-spire
+# Pale Spire
 
-This is our final project for the Yale class Computer Graphics, CPSC 478, Spring 2021. The assignment was to build a 10-second movie scene, with a distribution ray tracing engine built from scratch in C++. Our engine can render triangles, rectangles, and cylinders. It has the following features:
+This was our final project for the Yale class Computer Graphics, CPSC 478, in Spring 2021. It was built by Zacharie Sciamma and Matt Udry. The assignment was to create a 10-second movie scene, using our own distribution ray tracing engine built from scratch in C++. Our engine can render triangles, rectangles, and cylinders, and it also has the following complex features:
 
 * Soft shadows
 * Glossy reflections
 * Textures
 * Cook-Torrance reflectance
 
-You can watch our movie scene here: https://youtu.be/4R8zlZl6tE4
+You can watch our final movie scene here: 
 
-By Matt Udry and Zacharie Sciamma
+[<img width="644" alt="final movie render" src="https://user-images.githubusercontent.com/17149360/191397859-a5d1b7e9-6de7-4dea-ae22-db19bac4f249.png">](https://youtu.be/4R8zlZl6tE4)
 
-## Installation
+## Build and Run
+
+To install the project:
 
 * Clone the repository
 * On Mac, install jpgeglib using `brew install jpeglib`
 * Install IINA for viewing the movies
 
-## Running
+Then, to run it:
 
 * In the top level directory, call `make` then `./previz`
 * Go into the frames directory, then call `make`
